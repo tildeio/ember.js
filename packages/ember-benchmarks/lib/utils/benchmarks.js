@@ -28,13 +28,14 @@ function runDestroy(destroyed) {
 class Environment {}
 
 class AbstractBenchmark {
-  constructor() {
+  constructor(type) {
     let owner = this.owner = buildOwner();
     this.env = null;
     this.element = document.getElementById('bench-harness');
     this.renderer = null;
     this.component = null;
     this.snapshot = null;
+    this.type = type;
     this.perf = performance;
     owner.register('component-lookup:main', ComponentLookup);
     owner.registerOptionsForType('component', { singleton: false });
@@ -140,11 +141,11 @@ class BenchmarkFactory {
     switch (type) {
       case 'ember-glimmer':
         decorateClass(GlimmerBenchmark, mixins);
-        bench = new GlimmerBenchmark();
+        bench = new GlimmerBenchmark(type);
         break;
       case 'ember-htmlbars':
         decorateClass(HTMLBarsBenchmark, mixins);
-        bench = new HTMLBarsBenchmark();
+        bench = new HTMLBarsBenchmark(type);
         break;
       default:
         throw new Error('Please pass a benchmark type.');

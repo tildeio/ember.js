@@ -47,7 +47,7 @@ export default Benchmark.create('@ember-htmlbars initial render', {
       <h2>Biggest Streak: {{streak}}</h2>
       <div class="days">
         {{#each attrs.days key="number" as |day|}}
-          {{uptime-day day=day}}
+          {{foo-bar day=day}}
         {{/each}}
       </div>`
     });
@@ -55,6 +55,33 @@ export default Benchmark.create('@ember-htmlbars initial render', {
     this.registerComponent('uptime-day', { ComponentClass: DayUptime, template: `
       <span class="uptime-day-status" style="background-color: {{color}}" />
       <span class="hover">{{attrs.day.number}}: {{memo}}</span>
+    `});
+
+    // Begin Russian Doll Effect
+    const FooBar = Component.extend();
+    const BizzBar = Component.extend();
+    const BamBam = Component.extend();
+    const RamRod = Component.extend();
+    const FizzBar = Component.extend();
+
+    this.registerComponent('foo-bar', { ComponentClass: FooBar, template: `
+      {{bizz-bar day=attrs.day}}
+    `});
+
+    this.registerComponent('bizz-bar', { ComponentClass: BizzBar, template: `
+      {{bam-bam day=attrs.day}}
+    `});
+
+    this.registerComponent('bam-bam', { ComponentClass: BamBam, template: `
+      {{ram-rod day=attrs.day}}
+    `});
+
+    this.registerComponent('ram-rod', { ComponentClass: RamRod, template: `
+      {{fizz-bar day=attrs.day}}
+    `});
+
+    this.registerComponent('fizz-bar', { ComponentClass: FizzBar, template: `
+      {{uptime-day day=attrs.day}}
     `});
 
     this.registerTopLevelTemplate(`

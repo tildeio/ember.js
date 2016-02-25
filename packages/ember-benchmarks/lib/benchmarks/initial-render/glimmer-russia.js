@@ -30,6 +30,8 @@ export default Benchmark.create('@ember-glimmer initial render', {
       })
     });
 
+
+
     const DayUptime = Component.extend({
       tagName: 'uptime-day',
       color: computed('attrs.day.up', function() {
@@ -41,13 +43,40 @@ export default Benchmark.create('@ember-glimmer initial render', {
       })
     });
 
+    // Begin Russian Doll Effect
+    const FooBar = Component.extend();
+    const BizzBar = Component.extend();
+    const BamBam = Component.extend();
+    const RamRod = Component.extend();
+    const FizzBar = Component.extend();
+
+    this.registerComponent('foo-bar', { ComponentClass: FooBar, template: `
+      {{bizz-bar day=@day}}
+    `});
+
+    this.registerComponent('bizz-bar', { ComponentClass: BizzBar, template: `
+      {{bam-bam day=@day}}
+    `});
+
+    this.registerComponent('bam-bam', { ComponentClass: BamBam, template: `
+      {{ram-rod day=@day}}
+    `});
+
+    this.registerComponent('ram-rod', { ComponentClass: RamRod, template: `
+      {{fizz-bar day=@day}}
+    `});
+
+    this.registerComponent('fizz-bar', { ComponentClass: FizzBar, template: `
+      {{uptime-day day=@day}}
+    `});
+
     this.registerComponent('server-uptime', { ComponentClass: ServerUptime, template: `
       <h1>{{@name}}</h1>
       <h2>{{upDays}} Days Up</h2>
       <h2>Biggest Streak: {{streak}}</h2>
       <div class="days">
         {{#each @days key="number" as |day|}}
-          {{uptime-day day=day}}
+          {{foo-bar day=day}}
         {{/each}}
       </div>`
     });

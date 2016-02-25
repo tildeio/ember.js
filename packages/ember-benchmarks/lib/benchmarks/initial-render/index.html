@@ -7,11 +7,15 @@
 <body>
   <div id="bench-harness"></div>
   <script src="../jquery/jquery.js"></script>
-  <script src="../ember.debug.js"></script>
+  <script src="../ember.prod.js"></script>
   <script src="../ember-template-compiler.js"></script>
   <script>
     if (window.location.search === '?r=glimmer') {
       var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/glimmer')['default'];
+    } else if (window.location.search === '?r=glimmer-russia') {
+      var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/glimmer-russia')['default'];
+    } else if (window.location.search === '?r=htmlbars-russia') {
+      var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/htmlbars-russia')['default'];
     } else {
       var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/htmlbars')['default'];
     }
