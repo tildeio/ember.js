@@ -43,8 +43,9 @@ function babelConfigFor(environment) {
 }
 
 var glimmerEngine = require('glimmer-engine/ember-cli-build')();
-var find = require('broccoli-stew').find;
-var log = require('broccoli-stew').log;
+var stew = require('broccoli-stew');
+var find = stew.find;
+var log = stew.log;
 
 module.exports = function() {
   var features = JSON.parse(featuresJson).features;
@@ -98,5 +99,10 @@ module.exports = function() {
     vendoredPackages: vendorPackages
   });
 
-  return emberBuild.getDistTrees();
+  var benches = find('packages/ember-benchmarks/lib/benchmarks/', {
+    include: ['**/*.html']
+  });
+  var benched = find([emberBuild.getDistTrees(), benches]);
+
+  return benched;
 };
