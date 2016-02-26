@@ -53,16 +53,27 @@ export default Benchmark.create('@ember-glimmer initial render', {
     });
 
     this.registerComponent('uptime-day', { ComponentClass: DayUptime, template: `
-      <span class="uptime-day-status" style="background-color: {{color}}" />
-      <span class="hover">{{@day.number}}: {{memo}}</span>
+      {{#if item.hidden}}
+        {{feed-hidden-update item=item}}
+      {{/if}}
+
+      {{#if attrs.isDetailView}}
+        <section>
+          {{}}
+        </section>
+      {{/if}}
     `});
 
-    this.registerTopLevelTemplate(`
-      {{#each pages as |updates|}}
-        {{#each updates as |update|}}
-          {{}}
+    this.registerComponent('feed-list', { ComponentClass: FeedList, template: `
+      {{#each this.attrs.updates as |page|}}
+        {{#each page as |item|}}
+          {{feed-generic-update model=item}}
         {{/each}}
       {{/each}}
+    `})
+
+    this.registerTopLevelTemplate(`
+      {{feed-list updates=updates}}
     `);
   },
 
