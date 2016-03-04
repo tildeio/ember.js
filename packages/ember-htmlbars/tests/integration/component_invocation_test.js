@@ -16,7 +16,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{non-block}}');
 
-    equal(this.$().text(), 'In layout');
+    equal(this.textValue(), 'In layout');
   }
 
   ['@test GlimmerComponent cannot be invoked with curly braces']() {
@@ -39,7 +39,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#with-block}}In template{{/with-block}}');
 
-    equal(this.$().text(), 'In layout - In template');
+    equal(this.textValue(), 'In layout - In template');
   }
 
   ['@test non-block with properties on attrs']() {
@@ -51,7 +51,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{non-block someProp="something here"}}');
 
-    equal(this.$().text(), 'In layout - someProp: something here');
+    equal(this.textValue(), 'In layout - someProp: something here');
   }
 
   ['@test non-block with properties on attrs and component class']() {
@@ -62,7 +62,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{non-block someProp="something here"}}');
 
-    equal(this.$().text(), 'In layout - someProp: something here');
+    equal(this.textValue(), 'In layout - someProp: something here');
   }
 
 
@@ -82,7 +82,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{non-block someProp="something passed when invoked"}}');
 
-    equal(this.$().text(), 'In layout - someProp: value set in init');
+    equal(this.textValue(), 'In layout - someProp: value set in init');
   }
 
   ['@test lookup of component takes priority over property']() {
@@ -97,7 +97,7 @@ moduleFor('component - invocation', class extends RenderingTest {
       'some-prop': 'some-prop'
     });
 
-    equal(this.$().text(), 'some-prop some-component');
+    equal(this.textValue(), 'some-prop some-component');
   }
 
   ['@test component without dash is not looked up']() {
@@ -111,7 +111,7 @@ moduleFor('component - invocation', class extends RenderingTest {
       'somecomponent': 'notsomecomponent'
     });
 
-    equal(this.$().text(), 'notsomecomponent');
+    equal(this.textValue(), 'notsomecomponent');
   }
 
   ['@test rerendering component with attrs from parent']() {
@@ -138,13 +138,13 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     equal(didReceiveAttrs, 1, 'The didReceiveAttrs hook fired');
 
-    equal(this.$().text(), 'In layout - someProp: wycats');
+    equal(this.textValue(), 'In layout - someProp: wycats');
 
     run(() => {
       this.component.set('someProp', 'tomdale');
     });
 
-    equal(this.$().text(), 'In layout - someProp: tomdale');
+    equal(this.textValue(), 'In layout - someProp: tomdale');
     equal(didReceiveAttrs, 2, 'The didReceiveAttrs hook fired again');
     equal(willUpdate, 1, 'The willUpdate hook fired once');
 
@@ -152,7 +152,7 @@ moduleFor('component - invocation', class extends RenderingTest {
       this.rerender();
     });
 
-    equal(this.$().text(), 'In layout - someProp: tomdale');
+    equal(this.textValue(), 'In layout - someProp: tomdale');
     equal(didReceiveAttrs, 3, 'The didReceiveAttrs hook fired again');
     equal(willUpdate, 2, 'The willUpdate hook fired again');
   }
@@ -167,7 +167,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{non-block someProp="something here"}}');
 
-    equal(this.$().text(), 'In layout - someProp: something here');
+    equal(this.textValue(), 'In layout - someProp: something here');
   }
 
   ['@test block with properties on attrs']() {
@@ -179,7 +179,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#with-block someProp="something here"}}In template{{/with-block}}');
 
-    equal(this.$().text(), 'In layout - someProp: something here - In template');
+    equal(this.textValue(), 'In layout - someProp: something here - In template');
   }
 
   ['@test [DEPRECATED] block with properties on self']() {
@@ -192,7 +192,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#with-block someProp="something here"}}In template{{/with-block}}');
 
-    equal(this.$().text(), 'In layout - someProp: something here - In template');
+    equal(this.textValue(), 'In layout - someProp: something here - In template');
   }
 
   ['@test with ariaRole specified']() {
@@ -219,7 +219,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#with-block}}Whoop, whoop!{{/with-block}}');
 
-    equal(this.$().text(), 'Whoop, whoop!', 'block provided always overrides template property');
+    equal(this.textValue(), 'Whoop, whoop!', 'block provided always overrides template property');
   }
 
   ['@test hasBlock is true when block supplied']() {
@@ -231,7 +231,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#with-block}}In template{{/with-block}}');
 
-    equal(this.$().text(), 'In template');
+    equal(this.textValue(), 'In template');
   }
 
   ['@test hasBlock is false when no block supplied']() {
@@ -243,7 +243,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{with-block}}');
 
-    equal(this.$().text(), 'No Block!');
+    equal(this.textValue(), 'No Block!');
   }
 
   ['@test hasBlock is false when no block supplied']() {
@@ -255,7 +255,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{with-block}}');
 
-    equal(this.$().text(), 'No Block!');
+    equal(this.textValue(), 'No Block!');
   }
 
   ['@test hasBlockParams is true when block param supplied']() {
@@ -267,7 +267,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#with-block as |something|}}In template{{/with-block}}');
 
-    equal(this.$().text(), 'In template - In Component');
+    equal(this.textValue(), 'In template - In Component');
   }
 
   ['@test hasBlockParams is false when no block param supplied']() {
@@ -279,7 +279,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#with-block}}In block{{/with-block}}');
 
-    equal(this.$().text(), 'In block No Block Param!');
+    equal(this.textValue(), 'In block No Block Param!');
   }
 
   ['@test static named positional parameters']() {
@@ -295,7 +295,7 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{sample-component "Quint" 4}}');
 
-    equal(this.$().text(), 'Quint4');
+    equal(this.textValue(), 'Quint4');
   }
 
   ['@test dynamic named positional parameters']() {
@@ -314,14 +314,14 @@ moduleFor('component - invocation', class extends RenderingTest {
       myAge: 4
     });
 
-    equal(this.$().text(), 'Quint4');
+    equal(this.textValue(), 'Quint4');
 
     run(() => {
       this.component.set('myName', 'Edward');
       this.component.set('myAge', '5');
     });
 
-    equal(this.$().text(), 'Edward5');
+    equal(this.textValue(), 'Edward5');
   }
 
   ['@test if a value is passed as a non-positional parameter, it takes precedence over the named one']() {
@@ -356,9 +356,9 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{sample-component "Foo" 4 "Bar" id="args-3"}}{{sample-component "Foo" 4 "Bar" 5 "Baz" id="args-5"}}{{component "sample-component" "Foo" 4 "Bar" 5 "Baz" id="helper"}}');
 
-    equal(this.$('#args-3').text(), 'Foo4Bar');
-    equal(this.$('#args-5').text(), 'Foo4Bar5Baz');
-    equal(this.$('#helper').text(), 'Foo4Bar5Baz');
+    equal(this.textValue('#args-3'), 'Foo4Bar');
+    equal(this.textValue('#args-5'), 'Foo4Bar5Baz');
+    equal(this.textValue('#helper'), 'Foo4Bar5Baz');
   }
 
   ['@test arbitrary positional parameter conflict with hash parameter is reported']() {
@@ -394,7 +394,7 @@ moduleFor('component - invocation', class extends RenderingTest {
       things: ['Foo', 4, 'Bar']
     });
 
-    equal(this.$('#args-3').text(), 'Foo4Bar');
+    equal(this.textValue('#args-3'), 'Foo4Bar');
   }
 
   ['@test can use hash parameter instead of positional param']() {
@@ -416,9 +416,9 @@ moduleFor('component - invocation', class extends RenderingTest {
       things: ['Foo', 4, 'Bar']
     });
 
-    equal(this.$('#two-positional').text(), 'one - two');
-    equal(this.$('#one-positional').text(), 'one - two');
-    equal(this.$('#no-positional').text(), 'one - two');
+    equal(this.textValue('#two-positional'), 'one - two');
+    equal(this.textValue('#one-positional'), 'one - two');
+    equal(this.textValue('#no-positional'), 'one - two');
   }
 
   ['@test dynamic arbitrary number of positional parameters']() {
@@ -436,23 +436,23 @@ moduleFor('component - invocation', class extends RenderingTest {
       user2: 4
     });
 
-    equal(this.$('#direct').text(), 'Foo4');
-    equal(this.$('#helper').text(), 'Foo4');
+    equal(this.textValue('#direct'), 'Foo4');
+    equal(this.textValue('#helper'), 'Foo4');
 
     run(() => {
       this.component.set('user1', 'Bar');
       this.component.set('user2', '5');
     });
 
-    equal(this.$('#direct').text(), 'Bar5');
-    equal(this.$('#helper').text(), 'Bar5');
+    equal(this.textValue('#direct'), 'Bar5');
+    equal(this.textValue('#helper'), 'Bar5');
 
     run(() => {
       this.component.set('user2', '6');
     });
 
-    equal(this.$('#direct').text(), 'Bar6');
-    equal(this.$('#helper').text(), 'Bar6');
+    equal(this.textValue('#direct'), 'Bar6');
+    equal(this.textValue('#helper'), 'Bar6');
   }
 
   ['@test moduleName is available on _renderNode when a layout is present']() {
@@ -506,14 +506,14 @@ moduleFor('component - invocation', class extends RenderingTest {
       myAge: 4
     });
 
-    equal(this.$().text(), 'Quint4');
+    equal(this.textValue(), 'Quint4');
 
     run(() => {
       this.component.set('myName', 'Edward');
       this.component.set('myAge', '5');
     });
 
-    equal(this.$().text(), 'Edward5');
+    equal(this.textValue(), 'Edward5');
   }
 
   ['@test yield to inverse']() {
@@ -525,13 +525,13 @@ moduleFor('component - invocation', class extends RenderingTest {
       activated: true
     });
 
-    equal(this.$().text(), 'Yes:Hello42');
+    equal(this.textValue(), 'Yes:Hello42');
 
     run(() => {
       this.component.set('activated', false);
     });
 
-    equal(this.$().text(), 'No:Goodbye');
+    equal(this.textValue(), 'No:Goodbye');
   }
 
   ['@test parameterized hasBlock inverse']() {
@@ -541,8 +541,8 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#check-inverse id="expect-no"}}{{/check-inverse}}  {{#check-inverse id="expect-yes"}}{{else}}{{/check-inverse}}');
 
-    equal(this.$('#expect-no').text(), 'No');
-    equal(this.$('#expect-yes').text(), 'Yes');
+    equal(this.textValue('#expect-no'), 'No');
+    equal(this.textValue('#expect-yes'), 'Yes');
   }
 
   ['@test parameterized hasBlock default']() {
@@ -552,8 +552,8 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{check-block id="expect-no"}}  {{#check-block id="expect-yes"}}{{/check-block}}');
 
-    equal(this.$('#expect-no').text(), 'No');
-    equal(this.$('#expect-yes').text(), 'Yes');
+    equal(this.textValue('#expect-no'), 'No');
+    equal(this.textValue('#expect-yes'), 'Yes');
   }
 
   ['@test non-expression hasBlock ']() {
@@ -563,8 +563,8 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{check-block id="expect-no"}}  {{#check-block id="expect-yes"}}{{/check-block}}');
 
-    equal(this.$('#expect-no').text(), 'No');
-    equal(this.$('#expect-yes').text(), 'Yes');
+    equal(this.textValue('#expect-no'), 'No');
+    equal(this.textValue('#expect-yes'), 'Yes');
   }
 
   ['@test parameterized hasBlockParams']() {
@@ -574,8 +574,8 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#check-params id="expect-no"}}{{/check-params}}  {{#check-params id="expect-yes" as |foo|}}{{/check-params}}');
 
-    equal(this.$('#expect-no').text(), 'No');
-    equal(this.$('#expect-yes').text(), 'Yes');
+    equal(this.textValue('#expect-no'), 'No');
+    equal(this.textValue('#expect-yes'), 'Yes');
   }
 
   ['@test non-expression hasBlockParams']() {
@@ -585,8 +585,8 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{#check-params id="expect-no"}}{{/check-params}}  {{#check-params id="expect-yes" as |foo|}}{{/check-params}}');
 
-    equal(this.$('#expect-no').text(), 'No');
-    equal(this.$('#expect-yes').text(), 'Yes');
+    equal(this.textValue('#expect-no'), 'No');
+    equal(this.textValue('#expect-yes'), 'Yes');
   }
 
   ['@test components in template of a yielding component should have the proper parentView']() {
@@ -740,18 +740,18 @@ moduleFor('component - invocation', class extends RenderingTest {
 
     this.render('{{x-outer}}');
 
-    equal(this.$('#inner-value').text(), '1', 'initial render of inner');
-    equal(this.$('#middle-value').text(), '', 'initial render of middle (observers do not run during init)');
+    equal(this.textValue('#inner-value'), '1', 'initial render of inner');
+    equal(this.textValue('#middle-value'), '', 'initial render of middle (observers do not run during init)');
 
     run(() => outer.set('value', 2));
 
-    equal(this.$('#inner-value').text(), '2', 'second render of inner');
-    equal(this.$('#middle-value').text(), '2', 'second render of middle');
+    equal(this.textValue('#inner-value'), '2', 'second render of inner');
+    equal(this.textValue('#middle-value'), '2', 'second render of middle');
 
     run(() => outer.set('value', 3));
 
-    equal(this.$('#inner-value').text(), '3', 'third render of inner');
-    equal(this.$('#middle-value').text(), '3', 'third render of middle');
+    equal(this.textValue('#inner-value'), '3', 'third render of inner');
+    equal(this.textValue('#middle-value'), '3', 'third render of middle');
   }
 
   ['@test non-block with each rendering child components']() {
@@ -770,13 +770,13 @@ moduleFor('component - invocation', class extends RenderingTest {
       items: items
     });
 
-    equal(this.$().text(), 'In layout. [Child: Tom.][Child: Dick.][Child: Harry.]');
+    equal(this.textValue(), 'In layout. [Child: Tom.][Child: Dick.][Child: Harry.]');
 
     run(() => {
       items.pushObject('James');
     });
 
-    equal(this.$().text(), 'In layout. [Child: Tom.][Child: Dick.][Child: Harry.][Child: James.]');
+    equal(this.textValue(), 'In layout. [Child: Tom.][Child: Dick.][Child: Harry.][Child: James.]');
   }
 
   ['@test specifying classNames results in correct class'](assert) {

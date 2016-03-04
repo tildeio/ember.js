@@ -210,8 +210,8 @@ export class RenderingTest extends TestCase {
     }
   }
 
-  textValue() {
-    return this.$().text();
+  textValue(sel) {
+    return this.$(sel).text();
   }
 
   assertText(text) {
