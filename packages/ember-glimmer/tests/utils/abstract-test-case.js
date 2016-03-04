@@ -37,6 +37,14 @@ export function applyMixins(TestClass, ...mixins) {
   return TestClass;
 }
 
+function compileIfNeeded(template, options = {}) {
+  if (typeof template === 'string') {
+    return compile(template, options);
+  } else {
+    return template;
+  }
+}
+
 export function moduleFor(description, TestClass, ...mixins) {
   let context;
 
@@ -156,7 +164,7 @@ export class RenderingTest extends TestCase {
   render(templateStr, context = {}) {
     let { renderer, owner } = this;
 
-    owner.register('template:-top-level', compile(templateStr));
+    owner.register('template:-top-level', compileIfNeeded(templateStr));
 
     let attrs = assign({}, context, {
       tagName: '',
@@ -198,7 +206,7 @@ export class RenderingTest extends TestCase {
     }
 
     if (typeof template === 'string') {
-      owner.register(`template:components/${name}`, compile(template, { env }));
+      owner.register(`template:components/${name}`, compileIfNeeded(template, { env }));
     }
   }
 
