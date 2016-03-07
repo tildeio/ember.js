@@ -214,8 +214,18 @@ export class RenderingTest extends TestCase {
     return this.$(sel).text();
   }
 
-  assertText(text) {
-    assert.strictEqual(this.textValue(), text, '#qunit-fixture content');
+  assertText(text, sel, msg) {
+    let errorText;
+
+    if (msg) {
+      errorText = msg;
+    } else if (sel) {
+      errorText = `text in ${sel} was expected to be ${text} but found ${text}`;
+    } else {
+      errorText = `text was expected to be ${text} but found ${text}`;
+    }
+
+    assert.strictEqual(this.textValue(sel), text, errorText);
   }
 
   assertHTML(html) {
