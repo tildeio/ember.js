@@ -16,6 +16,10 @@
       var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/glimmer-russia')['default'];
     } else if (window.location.search === '?r=htmlbars-russia') {
       var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/htmlbars-russia')['default'];
+    } else if (window.location.search === '?r=feed-glimmer') {
+      var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/feed-glimmer')['default'];
+    } else if (window.location.search === '?r=feed-htmlbars') {
+      var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/feed-htmlbars')['default'];
     } else {
       var bench = Em.__loader.require('ember-benchmarks/benchmarks/initial-render/htmlbars')['default'];
     }
