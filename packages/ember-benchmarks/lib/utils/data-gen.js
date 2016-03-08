@@ -91,7 +91,7 @@ function viralUpdate(i) {
     }
   }`;
 }
-let wtf = `{
+let annotatedTxt = `{
     "values": [{
       "value": "Seriously... how did this ever get past RB? cc/ "
     },
@@ -142,7 +142,7 @@ let wtf = `{
     }]
   }`;
 
-let seriously = `{
+let notImpressed = `{
     "values": [
      {
       "value": "Chad Hietala",
@@ -154,12 +154,12 @@ let seriously = `{
       }
     },
     {
-      "value": " is not impressed at the craftsmenship on this thing."
+      "value": " is not impressed."
     }]
   }`;
 
 function text(i) {
-  return i % 2 ? wtf : seriously;
+  return i % 2 ? annotatedTxt : notImpressed;
 }
 
 function sponsoredUpdate(i) {
