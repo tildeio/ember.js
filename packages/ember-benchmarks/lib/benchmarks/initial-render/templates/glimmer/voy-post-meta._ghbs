@@ -1,0 +1,29 @@
+{{#if isSponsored}}
+  <span>Sponsored</span>
+{{/if}}
+
+{{#if model.actor.image}}
+  {{voy-avatar-image class="actor-image" image=model.actor.image}}
+{{/if}}
+
+<h3 class="actor">
+  <span class="name">
+    {{model.actor.fullName}}
+    {{#if isInfluencer}}
+      <span class="influencer-badge">
+        {{fullName}} is a LinkedIn Influencer
+      </span>
+    {{/if}}
+  </span>
+  {{#if viralComment}}
+    Commented
+    {{else if viralLike}}
+    Liked
+  {{/if}}
+</h3>
+
+{{#if showFollowing}}
+<div class="top-bar-meta">
+  {{follow-button isFollowing=isFollowing}}
+</div>
+{{/if}}

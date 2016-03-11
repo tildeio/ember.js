@@ -25,8 +25,6 @@ function runDestroy(destroyed) {
   }
 }
 
-class Environment {}
-
 class AbstractBenchmark {
   constructor(type) {
     let owner = this.owner = buildOwner();
@@ -87,19 +85,35 @@ class GlimmerBenchmark extends AbstractBenchmark {
     let dom = new GlimmerDOMHelper(document);
     let env = this.env = new GlimmerEnv({ owner: this.owner, dom });
     this.renderer = new GlimmerRenderer(dom, { destinedForDOM: true, env });
+    this.disallowRuntimeCompile = false;
     owner.register('component-lookup:main', ComponentLookup);
     owner.register('service:-glimmer-env', this.env, { instantiate: false });
     owner.inject('template', 'env', 'service:-glimmer-env');
   }
 
-  registerTopLevelTemplate(templateStr) {
-    this.owner.register('template:-top-level', compileGlimmer(templateStr));
+  registerTopLevelTemplate(template) {
+    if (typeof template === 'string') {
+      if (this.disallowRuntimeCompile) {
+        throw new Error(`This benchmark disallows runtime compilation. Please use a template file instead.`);
+      }
+
+      this.owner.register('template:-top-level', compileGlimmer(template));
+    } else if (template) {
+      this.owner.register('template:-top-level', template);
+    }
   }
 
   registerComponent(name, { ComponentClass = null, template = null }) {
     super.registerComponent(...arguments);
+
     if (typeof template === 'string') {
-      this.owner.register(`template:components/${name}`, compileGlimmer(template, { env: this.env }));
+      if (this.disallowRuntimeCompile) {
+        throw new Error(`This benchmark disallows runtime compilation. Please use a template file instead.`);
+      }
+
+      this.owner.register(`template:components/${name}`, compileGlimmer(template));
+    } else if (template) {
+      this.owner.register(`template:components/${name}`, template);
     }
   }
 }
@@ -108,7 +122,7 @@ class HTMLBarsBenchmark extends AbstractBenchmark {
   constructor() {
     super();
     let dom = new DOMHelper(document);
-    let env = this.env = new Environment({ owner: this.owner, dom });
+    let env = this.env = {};
     this.renderer = new Renderer(dom, { destinedForDOM: true, env });
     this.owner.registerOptionsForType('template', { instantiate: false });
   }
@@ -120,7 +134,7 @@ class HTMLBarsBenchmark extends AbstractBenchmark {
   registerComponent(name, { ComponentClass = null, template = null }) {
     super.registerComponent(...arguments);
     if (typeof template === 'string') {
-      this.owner.register(`template:components/${name}`, compile(template, { env: this.env }));
+      this.owner.register(`template:components/${name}`, compile(template));
     }
   }
 }

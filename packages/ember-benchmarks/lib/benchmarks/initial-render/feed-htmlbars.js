@@ -8,12 +8,14 @@ import { get } from 'ember-metal/property_get';
 import Benchmark from '../../utils/benchmarks';
 import Mixin from 'ember-metal/mixin';
 
+import Templates from './templates/htmlbars';
+
 function endTrace() {
   // just before paint
   requestAnimationFrame(function () {
     // after paint
     requestAnimationFrame(function () {
-      document.location.href = "about:blank";
+      // document.location.href = "about:blank";
     });
   });
 }
@@ -30,18 +32,11 @@ export default Benchmark.create('@ember-htmlbars initial render', {
       })
     });
 
-    this.registerComponent('feed-generic-update', { ComponentClass: FeedGenericUpdate, template: `
-      {{#if isDetailView}}
-      {{component componentType
-                  likeAction=likeAction
-                  model=model
-                  isDetailed=true}}
-      {{else}}
-        {{component componentType
-                  likeAction=likeAction
-                  model=model}}
-      {{/if}}
-    `});
+    let registerComponent = (name, { ComponentClass }) => {
+      this.registerComponent(name, { ComponentClass, template: Templates[name] });
+    };
+
+    registerComponent('feed-generic-update', { ComponentClass: FeedGenericUpdate });
 
     const FollowButton = Component.extend({
       tagName: 'button',
@@ -495,7 +490,9 @@ export default Benchmark.create('@ember-htmlbars initial render', {
   },
 
   start() {
+    console.profile('render');
     this.render({ model: [dataGen(20)] });
+    console.profileEnd('render');
     this.perf.mark('renderEnd');
     endTrace();
   }

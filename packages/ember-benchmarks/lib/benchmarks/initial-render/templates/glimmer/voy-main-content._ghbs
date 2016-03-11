@@ -1,0 +1,5 @@
+{{#each annotatedText as |stringObj|}}
+  {{#if stringObj}}
+    {{stringObj.value}}
+  {{/if}}
+{{/each}}

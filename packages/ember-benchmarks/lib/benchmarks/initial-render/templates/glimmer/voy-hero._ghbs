@@ -1,0 +1,13 @@
+{{#unless noHeroImage}}
+  {{#if isVideo}}
+  {{else if isArticle}}
+  {{else if isImage}}
+    {{voy-avatar-image altText=content.title image=content.image}}
+  {{/if}}
+{{/unless}}
+
+{{#if shouldShowContent}}
+  {{#unless noHeroImage}}
+    {{voy-hero-desc content=content}}
+  {{/unless}}
+{{/if}}

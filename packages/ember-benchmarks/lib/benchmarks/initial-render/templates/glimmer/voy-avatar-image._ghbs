@@ -1,0 +1,5 @@
+{{#if liveLoad}}
+  {{voy-lazy-image altText=altText image=image}}
+{{else}}
+  {{voy-custom-image altText=altText image=image}}
+{{/if}}

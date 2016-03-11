@@ -1,0 +1,10 @@
+{{#if isDetailView}}
+  {{component componentType
+              likeAction=likeAction
+              model=model
+              isDetailed=true}}
+{{else}}
+  {{component componentType
+            likeAction=likeAction
+            model=model}}
+{{/if}}

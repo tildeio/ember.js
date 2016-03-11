@@ -1,0 +1,7 @@
+{{#if content.title}}
+  <h2 class="image-headline">{{content.title}}</h2>
+{{/if}}
+
+{{#if content.subtitle}}
+  <h3 class="image-byline">{{content.subtitle}}</h3>
+{{/if}}

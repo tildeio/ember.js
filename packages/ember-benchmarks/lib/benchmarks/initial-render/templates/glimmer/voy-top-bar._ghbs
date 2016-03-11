@@ -1,0 +1,12 @@
+{{#if someLix}}
+{{voy-post-meta classNames="top-bar"
+  model=model
+  someLix=someLix
+  isSponsored=sponsoredLabelTopBar
+  actor=model.actor}}
+{{else}}
+{{voy-post-meta classNames="top-bar"
+  model=model
+  isSponsored=sponsoredLabelTopBar
+  actor=model.actor}}
+{{/if}}

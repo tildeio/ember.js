@@ -1,5 +1,5 @@
 // import SharedBench from './shared-bench';
-import Component from 'ember-views/components/component';
+import Component from 'ember-glimmer/ember-views/component';
 import dataGen from '../../utils/data-gen';
 import computed from 'ember-metal/computed';
 import { bool, equal, and, or, not } from 'ember-metal/computed_macros';
@@ -8,18 +8,21 @@ import { get } from 'ember-metal/property_get';
 import Benchmark from '../../utils/benchmarks';
 import Mixin from 'ember-metal/mixin';
 
+import Templates from './templates/glimmer';
+
 function endTrace() {
   // just before paint
   requestAnimationFrame(function () {
     // after paint
     requestAnimationFrame(function () {
-      document.location.href = "about:blank";
+      // document.location.href = "about:blank";
     });
   });
 }
 
 export default Benchmark.create('@ember-glimmer initial render', {
   setup() {
+    this.disallowRuntimeCompilation = true;
 
     const FeedGenericUpdate = Component.extend({
       componentType: computed(function() {
@@ -30,18 +33,11 @@ export default Benchmark.create('@ember-glimmer initial render', {
       })
     });
 
-    this.registerComponent('feed-generic-update', { ComponentClass: FeedGenericUpdate, template: `
-      {{#if isDetailView}}
-      {{component componentType
-                  likeAction=likeAction
-                  model=model
-                  isDetailed=true}}
-      {{else}}
-        {{component componentType
-                  likeAction=likeAction
-                  model=model}}
-      {{/if}}
-    `});
+    let registerComponent = (name, { ComponentClass }) => {
+      this.registerComponent(name, { ComponentClass, template: Templates[name] });
+    };
+
+    registerComponent('feed-generic-update', { ComponentClass: FeedGenericUpdate });
 
     const FollowButton = Component.extend({
       tagName: 'button',
@@ -50,13 +46,7 @@ export default Benchmark.create('@ember-glimmer initial render', {
       }
     });
 
-    this.registerComponent('follow-button', { ComponentClass: FollowButton, template: `
-      {{#if isFollowing}}
-        Unfollow
-      {{else}}
-        Follow
-      {{/if}}
-    `});
+    registerComponent('follow-button', { ComponentClass: FollowButton });
 
     const actorModelToRoute = {
       'entities/shared/mini-company': {
@@ -130,13 +120,7 @@ export default Benchmark.create('@ember-glimmer initial render', {
       })
     });
 
-    this.registerComponent('voy-main-content', { ComponentClass: VoyMainContent, template: `
-      {{#each annotatedText as |stringObj|}}
-        {{#if stringObj}}
-          {{stringObj.value}}
-        {{/if}}
-      {{/each}}
-    `});
+    registerComponent('voy-main-content', { ComponentClass: VoyMainContent });
 
     const VoyHero = Component.extend({
       hasTitle: bool('content.title'),
@@ -148,75 +132,35 @@ export default Benchmark.create('@ember-glimmer initial render', {
       isVideo: equal('content.contentType', 'video')
     });
 
-    this.registerComponent('voy-hero', { ComponentClass: VoyHero, template: `
-       {{#unless noHeroImage}}
-        {{#if isVideo}}
-        {{else if isArticle}}
-        {{else if isImage}}
-          {{voy-avatar-image altText=content.title image=content.image}}
-        {{/if}}
-      {{/unless}}
-
-      {{#if shouldShowContent}}
-        {{#unless noHeroImage}}
-          {{voy-hero-desc content=content}}
-        {{/unless}}
-      {{/if}}
-    `});
+    registerComponent('voy-hero', { ComponentClass: VoyHero });
 
     const VoyHeroDesc = Component.extend({});
 
-    this.registerComponent('voy-hero-desc', { ComponentClass: VoyHeroDesc, template: `
-    {{#if content.title}}
-      <h2 class="image-headline">{{content.title}}</h2>
-    {{/if}}
-
-    {{#if content.subtitle}}
-      <h3 class="image-byline">{{content.subtitle}}</h3>
-    {{/if}}
-    `});
+    registerComponent('voy-hero-desc', { ComponentClass: VoyHeroDesc });
 
     const InlineShowMore = Component.extend({});
 
-    this.registerComponent('inline-show-more-text', { ComponentClass: InlineShowMore, template: `
-      {{yield}}
-    `});
+    registerComponent('inline-show-more-text', { ComponentClass: InlineShowMore });
 
     const VoyLikeBtn = Component.extend({});
 
-    this.registerComponent('voy-like-btn', { ComponentClass: VoyLikeBtn, template: `
-    {{#svg-icon}}
-      <span>Like</span>
-    {{/svg-icon}}
-    `});
+    registerComponent('voy-like-btn', { ComponentClass: VoyLikeBtn });
 
     const VoyCommentBtn = Component.extend({});
 
-    this.registerComponent('voy-comment-btn', { ComponentClass: VoyCommentBtn, template: `
-    {{#svg-icon}}
-      <span>Comment</span>
-    {{/svg-icon}}
-    `});
+    registerComponent('voy-comment-btn', { ComponentClass: VoyCommentBtn });
 
     const VoyReshareBtn = Component.extend({});
 
-    this.registerComponent('voy-reshare-btn', { ComponentClass: VoyReshareBtn, template: `
-    {{#svg-icon}}
-      <span>Reshare</span>
-    {{/svg-icon}}
-    `});
+    registerComponent('voy-reshare-btn', { ComponentClass: VoyReshareBtn });
 
     const VoySocialCounts = Component.extend({});
 
-    this.registerComponent('voy-social-counts', { ComponentClass: VoySocialCounts, template: `
-      {{if likes (concat likes ' Likes') }} {{if comments (concat comments ' Comments') }}
-    `});
+    registerComponent('voy-social-counts', { ComponentClass: VoySocialCounts });
 
     const SvgIcon = Component.extend({});
 
-    this.registerComponent('svg-icon', { ComponentClass: SvgIcon, template: `
-      {{yield}}
-    `});
+    registerComponent('svg-icon', { ComponentClass: SvgIcon });
 
     const VoyActionBar = Component.extend({
       actions: {
@@ -226,40 +170,23 @@ export default Benchmark.create('@ember-glimmer initial render', {
       }
     });
 
-    this.registerComponent('voy-action-bar', { ComponentClass: VoyActionBar, template: `
-      {{voy-like-btn tagName="button"}}
-      {{voy-comment-btn tagName="button"}}
-      {{voy-reshare-btn tagName="button"}}
-      {{voy-social-counts tagName="span"}}
-    `});
+    registerComponent('voy-action-bar', { ComponentClass: VoyActionBar });
 
     const VoyNoHero = Component.extend({});
 
-    this.registerComponent('voy-no-hero', { ComponentClass: VoyNoHero, template: `
-      {{yield}}
-    `});
+    registerComponent('voy-no-hero', { ComponentClass: VoyNoHero });
 
     const VoyCustomImage = Component.extend();
 
-    this.registerComponent('voy-custom-image', { ComponentClass: VoyCustomImage, template: `
-      <img src="{{image}}" alt="{{altText}}">
-    `});
+    registerComponent('voy-custom-image', { ComponentClass: VoyCustomImage });
 
     const VoyLazyImage = Component.extend();
 
-    this.registerComponent('voy-lazy-image', { ComponentClass: VoyLazyImage, template: `
-      <img src="{{image}}" alt="{{altText}}">
-    `});
+    registerComponent('voy-lazy-image', { ComponentClass: VoyLazyImage });
 
     const VoyAvatarImage = Component.extend();
 
-    this.registerComponent('voy-avatar-image', { ComponentClass: VoyAvatarImage, template: `
-      {{#if liveLoad}}
-        {{voy-lazy-image altText=altText image=image}}
-      {{else}}
-        {{voy-custom-image altText=altText image=image}}
-      {{/if}}
-    `});
+    registerComponent('voy-avatar-image', { ComponentClass: VoyAvatarImage });
 
     const VoyPostMeta = Component.extend({
       hideFollowInterface: false,
@@ -276,37 +203,7 @@ export default Benchmark.create('@ember-glimmer initial render', {
       })
     });
 
-    this.registerComponent('voy-post-meta', { ComponentClass: VoyPostMeta, template: `
-      {{#if isSponsored}}
-        <span>Sponsored</span>
-      {{/if}}
-
-      {{#if model.actor.image}}
-        {{voy-avatar-image class="actor-image" image=model.actor.image}}
-      {{/if}}
-
-      <h3 class="actor">
-        <span class="name">
-          {{model.actor.fullName}}
-          {{#if isInfluencer}}
-            <span class="influencer-badge">
-              {{fullName}} is a LinkedIn Influencer
-            </span>
-          {{/if}}
-        </span>
-        {{#if viralComment}}
-          Commented
-          {{else if viralLike}}
-          Liked
-        {{/if}}
-      </h3>
-
-      {{#if showFollowing}}
-      <div class="top-bar-meta">
-        {{follow-button isFollowing=isFollowing}}
-      </div>
-      {{/if}}
-    `});
+    registerComponent('voy-post-meta', { ComponentClass: VoyPostMeta });
 
     const VoyTopBar = Component.extend({
       classNames: ['top-bar'],
@@ -314,20 +211,7 @@ export default Benchmark.create('@ember-glimmer initial render', {
       sponsoredLabelTopBar: equal('sponsoredDisplayFormat', 'fssu_vmobile_sulabel_topbar')
     });
 
-    this.registerComponent('voy-top-bar', { ComponentClass: VoyTopBar, template: `
-      {{#if someLix}}
-      {{voy-post-meta classNames="top-bar"
-        model=model
-        someLix=someLix
-        isSponsored=sponsoredLabelTopBar
-        actor=model.actor}}
-      {{else}}
-      {{voy-post-meta classNames="top-bar"
-        model=model
-        isSponsored=sponsoredLabelTopBar
-        actor=model.actor}}
-      {{/if}}
-    `});
+    registerComponent('voy-top-bar', { ComponentClass: VoyTopBar });
 
     const genericMixin = Mixin.create({
       tagName: 'article',
@@ -375,35 +259,7 @@ export default Benchmark.create('@ember-glimmer initial render', {
       }
     });
 
-    this.registerComponent('voy-profile-update', { ComponentClass: VoyProfileUpdate, template: `
-    {{#unless isDetailView}}
-      {{#if model.actor}}
-        {{voy-top-bar classNames="top-bar" model=model}}
-      {{/if}}
-    {{/unless}}
-
-    {{#if displayContentBlock}}
-      <div class="update-content">
-        {{#inline-show-more-text}}
-          {{voy-main-content text=model.content.text}}
-        {{/inline-show-more-text}}
-        {{#if hasHeroEntity}}
-          {{voy-hero classNames='hero-content'
-                    content=model.content}}
-        {{else if noHeroImage}}
-          {{voy-no-hero}}
-        {{/if}}
-      </div>
-    {{/if}}
-
-    {{voy-action-bar classNames='action-bar' like=likeAction model=model}}
-
-    {{#if isDetailView}}
-        {{voy-action-bar classNames='action-bar' like=likeAction model=model}}
-    {{/if}}
-
-    {{#if showCommentsList}}{{/if}}
-    `});
+    registerComponent('voy-profile-update', { ComponentClass: VoyProfileUpdate });
 
     const VoySponsoredUpdate = Component.extend(genericMixin, {
       hasSponsoredText: bool('model.content.text'),
@@ -423,79 +279,17 @@ export default Benchmark.create('@ember-glimmer initial render', {
       })
     });
 
-    this.registerComponent('voy-sponsored-update', { ComponentClass: VoySponsoredUpdate, template: `
-    {{#unless isDetailView}}
-      {{#if model.actor}}
-        {{voy-top-bar classNames="top-bar" model=model}}
-      {{/if}}
-    {{/unless}}
+    registerComponent('voy-sponsored-update', { ComponentClass: VoySponsoredUpdate });
 
-    {{#if displayContentBlock}}
-      <div class="update-content">
-        {{#if hasSponsoredText}}
-          {{#inline-show-more-text}}
-            {{voy-main-content text=model.content.text}}
-          {{/inline-show-more-text}}
-        {{/if}}
-        {{#if hasHeroEntity}}
-          {{voy-hero classNames='hero-content'
-                    content=model.content}}
-        {{else if noHeroImage}}
-          {{voy-no-hero}}
-        {{/if}}
-      </div>
-    {{/if}}
+    registerComponent('voy-viral-update', { ComponentClass: VoyViralUpdate });
 
-    {{voy-action-bar classNames='action-bar' like=likeAction model=model}}
-
-    {{#if showCommentsList}}{{/if}}
-    `});
-
-    this.registerComponent('voy-viral-update', { ComponentClass: VoyViralUpdate, template: `
-      {{#unless isDetailView}}
-        {{#if model.actor}}
-          {{voy-top-bar classNames="top-bar" model=model}}
-        {{/if}}
-      {{/unless}}
-
-      {{#if displayContentBlock}}
-        <div class="update-content">
-          {{#inline-show-more-text}}
-            {{voy-main-content text=model.content.text}}
-          {{/inline-show-more-text}}
-          {{#if hasHeroEntity}}
-            {{voy-hero classNames='hero-content'
-                      content=model.content}}
-          {{else if noHeroImage}}
-            {{voy-no-hero}}
-          {{/if}}
-        </div>
-      {{/if}}
-
-      {{voy-action-bar classNames='action-bar' like=likeAction model=model}}
-
-      {{#if isDetailView}}
-        {{voy-action-bar classNames='action-bar' like=likeAction model=model}}
-      {{/if}}
-
-      {{#if showCommentsList}}{{/if}}
-    `});
-
-    this.registerTopLevelTemplate(`
-      <ul class="feed" id="feed">
-        {{#each model as |updates|}}
-          {{#each updates as |update|}}
-            <li class="update">{{feed-generic-update
-            likeAction="like"
-            model=update}}</li>
-          {{/each}}
-        {{/each}}
-      </ul>
-    `);
+    this.registerTopLevelTemplate(Templates['feed']);
   },
 
   start() {
+    console.profile('render');
     this.render({ model: [dataGen(20)] });
+    console.profileEnd('render');
     this.perf.mark('renderEnd');
     endTrace();
   }

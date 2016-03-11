@@ -1,0 +1,25 @@
+{{#unless isDetailView}}
+  {{#if model.actor}}
+    {{voy-top-bar classNames="top-bar" model=model}}
+  {{/if}}
+{{/unless}}
+
+{{#if displayContentBlock}}
+  <div class="update-content">
+    {{#if hasSponsoredText}}
+      {{#inline-show-more-text}}
+        {{voy-main-content text=model.content.text}}
+      {{/inline-show-more-text}}
+    {{/if}}
+    {{#if hasHeroEntity}}
+      {{voy-hero classNames='hero-content'
+                content=model.content}}
+    {{else if noHeroImage}}
+      {{voy-no-hero}}
+    {{/if}}
+  </div>
+{{/if}}
+
+{{voy-action-bar classNames='action-bar' like=likeAction model=model}}
+
+{{#if showCommentsList}}{{/if}}

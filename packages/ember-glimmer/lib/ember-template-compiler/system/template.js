@@ -2,13 +2,18 @@ import EmberObject from 'ember-runtime/system/object';
 import { Template } from 'glimmer-runtime';
 
 const Wrapper = EmberObject.extend({
-  _entryPoint: null,
-  _layout: null,
+  init() {
+    this._super();
+    this._entryPoint = null;
+    this._layout = null;
+    this._parsed = null;
+  },
 
   asEntryPoint() {
     if (!this._entryPoint) {
-      let { spec, env } = this;
-      this._entryPoint = Template.fromSpec(spec, env);
+      let parsed = this._parse();
+      let { env } = this;
+      this._entryPoint = Template.fromSpec(parsed, env);
     }
 
     return this._entryPoint;
@@ -16,14 +21,24 @@ const Wrapper = EmberObject.extend({
 
   asLayout() {
     if (!this._layout) {
-      let { spec, env } = this;
-      this._layout = Template.layoutFromSpec(spec, env);
+      let parsed = this._parse();
+      let { env } = this;
+      this._layout = Template.layoutFromSpec(parsed, env);
     }
 
     return this._layout;
+  },
+
+  _parse() {
+    if (this._parsed) { return this._parsed; }
+
+    let parsed = this._parsed = JSON.parse(this.raw);
+    this.raw = null;
+
+    return parsed;
   }
 });
 
-export default function template(json) {
-  return Wrapper.extend({ spec: JSON.parse(json) });
+export default function template(raw) {
+  return Wrapper.extend({ raw });
 }

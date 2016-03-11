@@ -1,0 +1,9 @@
+<ul class="feed" id="feed">
+  {{#each model as |updates|}}
+    {{#each updates as |update|}}
+      <li class="update">{{feed-generic-update
+      likeAction="like"
+      model=update}}</li>
+    {{/each}}
+  {{/each}}
+</ul>

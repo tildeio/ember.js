@@ -1,0 +1,4 @@
+{{voy-like-btn tagName="button"}}
+{{voy-comment-btn tagName="button"}}
+{{voy-reshare-btn tagName="button"}}
+{{voy-social-counts tagName="span"}}
