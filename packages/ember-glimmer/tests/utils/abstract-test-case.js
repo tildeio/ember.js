@@ -129,8 +129,12 @@ export class TestCase {
     return snapshot;
   }
 
-  assertText(text) {
-    this.assert.strictEqual(this.textValue(), text, '#qunit-fixture content');
+  assertText(expected, message) {
+    this.assert.strictEqual(this.textValue(), expected, message || '#qunit-fixture content');
+  }
+
+  assertTextForSelector(selector, expected, message) {
+    this.assert.strictEqual(this.$(selector).text(), expected, message || `$(${selector}) content`);
   }
 
   assertHTML(html) {
@@ -252,10 +256,10 @@ export class RenderingTest extends TestCase {
     return this.component;
   }
 
-  render(templateStr, context = {}) {
+  render(templateStr, context = {}, { templateOptions = {} } = {}) {
     let { renderer, owner } = this;
 
-    owner.register('template:-top-level', compile(templateStr));
+    owner.register('template:-top-level', compile(templateStr, templateOptions));
 
     let attrs = assign({}, context, {
       tagName: '',
@@ -289,7 +293,7 @@ export class RenderingTest extends TestCase {
     }
   }
 
-  registerComponent(name, { ComponentClass = null, template = null }) {
+  registerComponent(name, { ComponentClass = null, template = null, templateOptions = {} }) {
     let { owner } = this;
 
     if (ComponentClass) {
@@ -297,7 +301,7 @@ export class RenderingTest extends TestCase {
     }
 
     if (typeof template === 'string') {
-      owner.register(`template:components/${name}`, compile(template));
+      owner.register(`template:components/${name}`, compile(template, templateOptions));
     }
   }
 

@@ -1,955 +1,830 @@
 import Ember from 'ember-metal/core';
-import EmberView from 'ember-views/views/view';
-import jQuery from 'ember-views/system/jquery';
-import compile from 'ember-template-compiler/system/compile';
-import ComponentLookup from 'ember-views/component_lookup';
 import Component from 'ember-views/components/component';
 import GlimmerComponent from 'ember-htmlbars/glimmer-component';
-import { runAppend, runDestroy } from 'ember-runtime/tests/utils';
-import { set } from 'ember-metal/property_set';
 import run from 'ember-metal/run_loop';
 import { A as emberA } from 'ember-runtime/system/native_array';
-import buildOwner from 'container/tests/test-helpers/build-owner';
-import { OWNER } from 'container/owner';
+import compile from 'ember-template-compiler/system/compile';
+import { RenderingTest, moduleFor } from 'ember-htmlbars/tests/utils/test-case';
 
-var owner, view;
+moduleFor('component - invocation', class extends RenderingTest {
+  ['@test non-block without properties']() {
+    expect(1);
 
-function commonSetup() {
-  owner = buildOwner();
-  owner.registerOptionsForType('component', { singleton: false });
-  owner.registerOptionsForType('view', { singleton: false });
-  owner.registerOptionsForType('template', { instantiate: false });
-  owner.register('component-lookup:main', ComponentLookup);
-}
+    this.registerComponent('non-block', {
+      template: 'In layout'
+    });
 
-function commonTeardown() {
-  runDestroy(owner);
-  runDestroy(view);
-  owner = view = null;
-}
+    this.render('{{non-block}}');
 
-function appendViewFor(template, hash={}) {
-  let view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile(template)
-  }).create(hash);
-
-  runAppend(view);
-
-  return view;
-}
-
-QUnit.module('component - invocation', {
-  setup() {
-    commonSetup();
-  },
-
-  teardown() {
-    commonTeardown();
+    this.assertText('In layout');
   }
-});
 
-QUnit.test('non-block without properties', function() {
-  expect(1);
+  ['@test GlimmerComponent cannot be invoked with curly braces']() {
+    this.registerComponent('non-block', {
+      ComponentClass: GlimmerComponent.extend(),
+      template: 'In layout'
+    });
 
-  owner.register('template:components/non-block', compile('In layout'));
+    expectAssertion(() => {
+      this.render('{{non-block}}');
+    }, /cannot invoke the 'non-block' component with curly braces/);
+  }
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{non-block}}')
-  }).create();
+  ['@test block without properties']() {
+    expect(1);
 
-  runAppend(view);
+    this.registerComponent('with-block', {
+      template: 'In layout - {{yield}}'
+    });
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout');
-});
+    this.render('{{#with-block}}In template{{/with-block}}');
 
-QUnit.test('GlimmerComponent cannot be invoked with curly braces', function() {
-  owner.register('template:components/non-block', compile('In layout'));
-  owner.register('component:non-block', GlimmerComponent.extend());
+    this.assertText('In layout - In template');
+  }
 
-  expectAssertion(function() {
-    view = appendViewFor('{{non-block}}');
-  }, /cannot invoke the 'non-block' component with curly braces/);
-});
+  ['@test non-block with properties on attrs']() {
+    expect(1);
 
-QUnit.test('block without properties', function() {
-  expect(1);
+    this.registerComponent('non-block', {
+      template: 'In layout - someProp: {{attrs.someProp}}'
+    });
 
-  owner.register('template:components/with-block', compile('In layout - {{yield}}'));
+    this.render('{{non-block someProp="something here"}}');
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#with-block}}In template{{/with-block}}')
-  }).create();
+    this.assertText('In layout - someProp: something here');
+  }
 
-  runAppend(view);
+  ['@test non-block with properties on attrs and component class']() {
+    this.registerComponent('non-block', {
+      ComponentClass: Component.extend(),
+      template: 'In layout - someProp: {{attrs.someProp}}'
+    });
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - In template');
-});
+    this.render('{{non-block someProp="something here"}}');
 
-QUnit.test('non-block with properties on attrs', function() {
-  expect(1);
+    this.assertText('In layout - someProp: something here');
+  }
 
-  owner.register('template:components/non-block', compile('In layout - someProp: {{attrs.someProp}}'));
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{non-block someProp="something here"}}')
-  }).create();
+  ['@test non-block with properties on overridden in init']() {
+    this.registerComponent('non-block', {
+      ComponentClass: Component.extend({
+        someProp: null,
 
-  runAppend(view);
+        init() {
+          this._super(...arguments);
+          this.someProp = 'value set in init';
+        }
+      }),
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: something here');
-});
+      template: 'In layout - someProp: {{someProp}}'
+    });
 
-QUnit.test('non-block with properties on attrs and component class', function() {
-  owner.register('component:non-block', Component.extend());
-  owner.register('template:components/non-block', compile('In layout - someProp: {{attrs.someProp}}'));
+    this.render('{{non-block someProp="something passed when invoked"}}');
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{non-block someProp="something here"}}')
-  }).create();
+    this.assertText('In layout - someProp: value set in init');
+  }
 
-  runAppend(view);
+  ['@test lookup of component takes priority over property']() {
+    expect(1);
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: something here');
-});
+    this.registerComponent('some-component', {
+      template: 'some-component'
+    });
 
-QUnit.test('non-block with properties on overridden in init', function() {
-  owner.register('component:non-block', Component.extend({
-    someProp: null,
-
-    init() {
-      this._super(...arguments);
-      this.someProp = 'value set in init';
-    }
-  }));
-  owner.register('template:components/non-block', compile('In layout - someProp: {{someProp}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{non-block someProp="something passed when invoked"}}')
-  }).create();
-
-  runAppend(view);
-
-  equal(view.$().text(), 'In layout - someProp: value set in init');
-});
-
-QUnit.test('lookup of component takes priority over property', function() {
-  expect(1);
-
-  owner.register('template:components/some-component', compile('some-component'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{some-prop}} {{some-component}}'),
-    context: {
+    this.render('{{some-prop}} {{some-component}}', {
       'some-component': 'not-some-component',
       'some-prop': 'some-prop'
-    }
-  }).create();
+    });
 
-  runAppend(view);
+    this.assertText('some-prop some-component');
+  }
 
-  equal(jQuery('#qunit-fixture').text(), 'some-prop some-component');
-});
+  ['@test component without dash is not looked up']() {
+    expect(1);
 
-QUnit.test('component without dash is not looked up', function() {
-  expect(1);
+    this.registerComponent('somecomponent', {
+      template: 'somecomponent'
+    });
 
-  owner.register('template:components/somecomponent', compile('somecomponent'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{somecomponent}}'),
-    context: {
+    this.render('{{somecomponent}}', {
       'somecomponent': 'notsomecomponent'
-    }
-  }).create();
+    });
 
-  runAppend(view);
+    this.assertText('notsomecomponent');
+  }
 
-  equal(jQuery('#qunit-fixture').text(), 'notsomecomponent');
-});
+  ['@test rerendering component with attrs from parent']() {
+    let willUpdate = 0;
+    let didReceiveAttrs = 0;
 
-QUnit.test('rerendering component with attrs from parent', function() {
-  var willUpdate = 0;
-  var didReceiveAttrs = 0;
+    this.registerComponent('non-block', {
+      ComponentClass: Component.extend({
+        didReceiveAttrs() {
+          didReceiveAttrs++;
+        },
 
-  owner.register('component:non-block', Component.extend({
-    didReceiveAttrs() {
-      didReceiveAttrs++;
-    },
+        willUpdate() {
+          willUpdate++;
+        }
+      }),
 
-    willUpdate() {
-      willUpdate++;
-    }
-  }));
-  owner.register('template:components/non-block', compile('In layout - someProp: {{attrs.someProp}}'));
+      template: 'In layout - someProp: {{attrs.someProp}}'
+    });
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{non-block someProp=view.someProp}}'),
-    someProp: 'wycats'
-  }).create();
+    this.render('{{non-block someProp=view.someProp}}', {
+      someProp: 'wycats'
+    });
 
-  runAppend(view);
+    equal(didReceiveAttrs, 1, 'The didReceiveAttrs hook fired');
 
-  equal(didReceiveAttrs, 1, 'The didReceiveAttrs hook fired');
+    this.assertText('In layout - someProp: wycats');
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: wycats');
+    run(() => {
+      this.component.set('someProp', 'tomdale');
+    });
 
-  run(function() {
-    view.set('someProp', 'tomdale');
-  });
+    this.assertText('In layout - someProp: tomdale');
+    equal(didReceiveAttrs, 2, 'The didReceiveAttrs hook fired again');
+    equal(willUpdate, 1, 'The willUpdate hook fired once');
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: tomdale');
-  equal(didReceiveAttrs, 2, 'The didReceiveAttrs hook fired again');
-  equal(willUpdate, 1, 'The willUpdate hook fired once');
+    run(() => {
+      this.rerender();
+    });
 
-  run(view, 'rerender');
+    this.assertText('In layout - someProp: tomdale');
+    equal(didReceiveAttrs, 3, 'The didReceiveAttrs hook fired again');
+    equal(willUpdate, 2, 'The willUpdate hook fired again');
+  }
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: tomdale');
-  equal(didReceiveAttrs, 3, 'The didReceiveAttrs hook fired again');
-  equal(willUpdate, 2, 'The willUpdate hook fired again');
-});
+  ['@test [DEPRECATED] non-block with properties on self']() {
+    // TODO: attrs
+    // expectDeprecation("You accessed the `someProp` attribute directly. Please use `attrs.someProp` instead.");
 
+    this.registerComponent('non-block', {
+      template: 'In layout - someProp: {{someProp}}'
+    });
 
-QUnit.test('[DEPRECATED] non-block with properties on self', function() {
-  // TODO: attrs
-  // expectDeprecation("You accessed the `someProp` attribute directly. Please use `attrs.someProp` instead.");
+    this.render('{{non-block someProp="something here"}}');
 
-  owner.register('template:components/non-block', compile('In layout - someProp: {{someProp}}'));
+    this.assertText('In layout - someProp: something here');
+  }
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{non-block someProp="something here"}}')
-  }).create();
+  ['@test block with properties on attrs']() {
+    expect(1);
 
-  runAppend(view);
+    this.registerComponent('with-block', {
+      template: 'In layout - someProp: {{attrs.someProp}} - {{yield}}'
+    });
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: something here');
-});
+    this.render('{{#with-block someProp="something here"}}In template{{/with-block}}');
 
-QUnit.test('block with properties on attrs', function() {
-  expect(1);
+    this.assertText('In layout - someProp: something here - In template');
+  }
 
-  owner.register('template:components/with-block', compile('In layout - someProp: {{attrs.someProp}} - {{yield}}'));
+  ['@test [DEPRECATED] block with properties on self']() {
+    // TODO: attrs
+    // expectDeprecation("You accessed the `someProp` attribute directly. Please use `attrs.someProp` instead.");
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#with-block someProp="something here"}}In template{{/with-block}}')
-  }).create();
+    this.registerComponent('with-block', {
+      template: 'In layout - someProp: {{someProp}} - {{yield}}'
+    });
 
-  runAppend(view);
+    this.render('{{#with-block someProp="something here"}}In template{{/with-block}}');
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: something here - In template');
-});
+    this.assertText('In layout - someProp: something here - In template');
+  }
 
-QUnit.test('[DEPRECATED] block with properties on self', function() {
-  // TODO: attrs
-  // expectDeprecation("You accessed the `someProp` attribute directly. Please use `attrs.someProp` instead.");
+  ['@test with ariaRole specified']() {
+    expect(1);
 
-  owner.register('template:components/with-block', compile('In layout - someProp: {{someProp}} - {{yield}}'));
+    this.registerComponent('aria-test', {
+      template: 'Here!'
+    });
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#with-block someProp="something here"}}In template{{/with-block}}')
-  }).create();
+    this.render('{{aria-test id="aria-test" ariaRole="main"}}');
 
-  runAppend(view);
+    equal(this.$('#aria-test').attr('role'), 'main', 'role attribute is applied');
+  }
 
-  equal(jQuery('#qunit-fixture').text(), 'In layout - someProp: something here - In template');
-});
+  ['@test `template` specified in a component is overridden by block']() {
+    expect(1);
 
-QUnit.test('with ariaRole specified', function() {
-  expect(1);
+    this.registerComponent('with-block', {
+      ComponentClass: Component.extend({
+        layout: compile('{{yield}}'),
+        template: compile('Oh, noes!')
+      })
+    });
 
-  owner.register('template:components/aria-test', compile('Here!'));
+    this.render('{{#with-block}}Whoop, whoop!{{/with-block}}');
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{aria-test id="aria-test" ariaRole="main"}}')
-  }).create();
+    this.assertText('Whoop, whoop!', 'block provided always overrides template property');
+  }
 
-  runAppend(view);
+  ['@test hasBlock is true when block supplied']() {
+    expect(1);
 
-  equal(view.$('#aria-test').attr('role'), 'main', 'role attribute is applied');
-});
+    this.registerComponent('with-block', {
+      template: '{{#if hasBlock}}{{yield}}{{else}}No Block!{{/if}}'
+    });
 
-QUnit.test('`template` specified in a component is overridden by block', function() {
-  expect(1);
+    this.render('{{#with-block}}In template{{/with-block}}');
 
-  owner.register('component:with-block', Component.extend({
-    layout: compile('{{yield}}'),
-    template: compile('Oh, noes!')
-  }));
+    this.assertText('In template');
+  }
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#with-block}}Whoop, whoop!{{/with-block}}')
-  }).create();
+  ['@test hasBlock is false when no block supplied']() {
+    expect(1);
 
-  runAppend(view);
+    this.registerComponent('with-block', {
+      template: '{{#if hasBlock}}{{yield}}{{else}}No Block!{{/if}}'
+    });
 
-  equal(view.$().text(), 'Whoop, whoop!', 'block provided always overrides template property');
-});
+    this.render('{{with-block}}');
 
-QUnit.test('hasBlock is true when block supplied', function() {
-  expect(1);
+    this.assertText('No Block!');
+  }
 
-  owner.register('template:components/with-block', compile('{{#if hasBlock}}{{yield}}{{else}}No Block!{{/if}}'));
+  ['@test hasBlock is false when no block supplied']() {
+    expect(1);
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#with-block}}In template{{/with-block}}')
-  }).create();
+    this.registerComponent('with-block', {
+      template: '{{#if hasBlock}}{{yield}}{{else}}No Block!{{/if}}'
+    });
 
-  runAppend(view);
+    this.render('{{with-block}}');
 
-  equal(jQuery('#qunit-fixture').text(), 'In template');
-});
+    this.assertText('No Block!');
+  }
 
-QUnit.test('hasBlock is false when no block supplied', function() {
-  expect(1);
+  ['@test hasBlockParams is true when block param supplied']() {
+    expect(1);
 
-  owner.register('template:components/with-block', compile('{{#if hasBlock}}{{yield}}{{else}}No Block!{{/if}}'));
+    this.registerComponent('with-block', {
+      template: '{{#if hasBlockParams}}{{yield this}} - In Component{{else}}{{yield}} No Block!{{/if}}'
+    });
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{with-block}}')
-  }).create();
+    this.render('{{#with-block as |something|}}In template{{/with-block}}');
 
-  runAppend(view);
+    this.assertText('In template - In Component');
+  }
 
-  equal(jQuery('#qunit-fixture').text(), 'No Block!');
-});
+  ['@test hasBlockParams is false when no block param supplied']() {
+    expect(1);
 
-QUnit.test('hasBlockParams is true when block param supplied', function() {
-  expect(1);
+    this.registerComponent('with-block', {
+      template: '{{#if hasBlockParams}}{{yield this}}{{else}}{{yield}} No Block Param!{{/if}}'
+    });
 
-  owner.register('template:components/with-block', compile('{{#if hasBlockParams}}{{yield this}} - In Component{{else}}{{yield}} No Block!{{/if}}'));
+    this.render('{{#with-block}}In block{{/with-block}}');
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#with-block as |something|}}In template{{/with-block}}')
-  }).create();
+    this.assertText('In block No Block Param!');
+  }
 
-  runAppend(view);
+  ['@test static named positional parameters']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: ['name', 'age']
+    });
 
-  equal(jQuery('#qunit-fixture').text(), 'In template - In Component');
-});
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{attrs.name}}{{attrs.age}}'
+    });
 
-QUnit.test('hasBlockParams is false when no block param supplied', function() {
-  expect(1);
+    this.render('{{sample-component "Quint" 4}}');
 
-  owner.register('template:components/with-block', compile('{{#if hasBlockParams}}{{yield this}}{{else}}{{yield}} No Block Param!{{/if}}'));
+    this.assertText('Quint4');
+  }
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#with-block}}In block{{/with-block}}')
-  }).create();
+  ['@test dynamic named positional parameters']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: ['name', 'age']
+    });
 
-  runAppend(view);
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{attrs.name}}{{attrs.age}}'
+    });
 
-  equal(jQuery('#qunit-fixture').text(), 'In block No Block Param!');
-});
-
-QUnit.test('static named positional parameters', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: ['name', 'age']
-  });
-  owner.register('template:components/sample-component', compile('{{attrs.name}}{{attrs.age}}'));
-  owner.register('component:sample-component', SampleComponent);
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component "Quint" 4}}')
-  }).create();
-
-  runAppend(view);
-
-  equal(jQuery('#qunit-fixture').text(), 'Quint4');
-});
-
-QUnit.test('dynamic named positional parameters', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: ['name', 'age']
-  });
-
-  owner.register('template:components/sample-component', compile('{{attrs.name}}{{attrs.age}}'));
-  owner.register('component:sample-component', SampleComponent);
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component myName myAge}}'),
-    context: {
+    this.render('{{sample-component myName myAge}}', {
       myName: 'Quint',
       myAge: 4
-    }
-  }).create();
+    });
 
-  runAppend(view);
+    this.assertText('Quint4');
 
-  equal(jQuery('#qunit-fixture').text(), 'Quint4');
-  run(function() {
-    set(view.context, 'myName', 'Edward');
-    set(view.context, 'myAge', '5');
-  });
+    run(() => {
+      this.component.set('myName', 'Edward');
+      this.component.set('myAge', '5');
+    });
 
-  equal(jQuery('#qunit-fixture').text(), 'Edward5');
-});
+    this.assertText('Edward5');
+  }
 
-QUnit.test('if a value is passed as a non-positional parameter, it takes precedence over the named one', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: ['name']
-  });
+  ['@test if a value is passed as a non-positional parameter, it takes precedence over the named one']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: ['name']
+    });
 
-  owner.register('template:components/sample-component', compile('{{attrs.name}}'));
-  owner.register('component:sample-component', SampleComponent);
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{attrs.name}}'
+    });
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component notMyName name=myName}}'),
-    context: {
-      myName: 'Quint',
-      notMyName: 'Sergio'
-    }
-  }).create();
+    expectAssertion(() => {
+      this.render('{{sample-component notMyName name=myName}}', {
+        myName: 'Quint',
+        notMyName: 'Sergio'
+      });
+    }, `You cannot specify both a positional param (at position 0) and the hash argument \`name\`.`);
+  }
 
-  expectAssertion(function() {
-    runAppend(view);
-  }, `You cannot specify both a positional param (at position 0) and the hash argument \`name\`.`);
-});
+  ['@test static arbitrary number of positional parameters']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: 'names'
+    });
 
-QUnit.test('static arbitrary number of positional parameters', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: 'names'
-  });
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{#each attrs.names as |name|}}{{name}}{{/each}}'
+    });
 
-  owner.register('template:components/sample-component', compile('{{#each attrs.names as |name|}}{{name}}{{/each}}'));
-  owner.register('component:sample-component', SampleComponent);
+    this.render('{{sample-component "Foo" 4 "Bar" id="args-3"}}{{sample-component "Foo" 4 "Bar" 5 "Baz" id="args-5"}}{{component "sample-component" "Foo" 4 "Bar" 5 "Baz" id="helper"}}');
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component "Foo" 4 "Bar" id="args-3"}}{{sample-component "Foo" 4 "Bar" 5 "Baz" id="args-5"}}{{component "sample-component" "Foo" 4 "Bar" 5 "Baz" id="helper"}}')
-  }).create();
+    this.assertTextForSelector('#args-3', 'Foo4Bar');
+    this.assertTextForSelector('#args-5', 'Foo4Bar5Baz');
+    this.assertTextForSelector('#helper', 'Foo4Bar5Baz');
+  }
 
-  runAppend(view);
+  ['@test arbitrary positional parameter conflict with hash parameter is reported']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: 'names'
+    });
 
-  equal(view.$('#args-3').text(), 'Foo4Bar');
-  equal(view.$('#args-5').text(), 'Foo4Bar5Baz');
-  equal(view.$('#helper').text(), 'Foo4Bar5Baz');
-});
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{#each attrs.names as |name|}}{{name}}{{/each}}'
+    });
 
-QUnit.test('arbitrary positional parameter conflict with hash parameter is reported', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: 'names'
-  });
+    expectAssertion(() => {
+      this.render('{{sample-component "Foo" 4 "Bar" names=numbers id="args-3"}}', {
+        numbers: [1, 2, 3]
+      });
+    }, `You cannot specify positional parameters and the hash argument \`names\`.`);
+  }
 
-  owner.register('template:components/sample-component', compile('{{#each attrs.names as |name|}}{{name}}{{/each}}'));
-  owner.register('component:sample-component', SampleComponent);
+  ['@test can use hash parameter instead of arbitrary positional param [GH #12444]']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: 'names'
+    });
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component "Foo" 4 "Bar" names=numbers id="args-3"}}'),
-    context: {
-      numbers: [1, 2, 3]
-    }
-  }).create();
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{#each attrs.names as |name|}}{{name}}{{/each}}'
+    });
 
-  expectAssertion(function() {
-    runAppend(view);
-  }, `You cannot specify positional parameters and the hash argument \`names\`.`);
-});
-
-QUnit.test('can use hash parameter instead of arbitrary positional param [GH #12444]', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: 'names'
-  });
-
-  owner.register('template:components/sample-component', compile('{{#each attrs.names as |name|}}{{name}}{{/each}}'));
-  owner.register('component:sample-component', SampleComponent);
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component names=things id="args-3"}}'),
-    context: {
+    this.render('{{sample-component names=things id="args-3"}}', {
       things: ['Foo', 4, 'Bar']
-    }
-  }).create();
+    });
 
-  runAppend(view);
+    this.assertTextForSelector('#args-3', 'Foo4Bar');
+  }
 
-  equal(view.$('#args-3').text(), 'Foo4Bar');
-});
+  ['@test can use hash parameter instead of positional param']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: ['first', 'second']
+    });
 
-QUnit.test('can use hash parameter instead of positional param', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: ['first', 'second']
-  });
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{attrs.first}} - {{attrs.second}}'
+    });
 
-  owner.register('template:components/sample-component', compile('{{attrs.first}} - {{attrs.second}}'));
-  owner.register('component:sample-component', SampleComponent);
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile(`
+    this.render(`
       {{sample-component "one" "two" id="two-positional"}}
       {{sample-component "one" second="two" id="one-positional"}}
       {{sample-component first="one" second="two" id="no-positional"}}
-
-    `),
-    context: {
+      `, {
       things: ['Foo', 4, 'Bar']
-    }
-  }).create();
+    });
 
-  runAppend(view);
+    this.assertTextForSelector('#two-positional', 'one - two');
+    this.assertTextForSelector('#one-positional', 'one - two');
+    this.assertTextForSelector('#no-positional', 'one - two');
+  }
 
-  equal(view.$('#two-positional').text(), 'one - two');
-  equal(view.$('#one-positional').text(), 'one - two');
-  equal(view.$('#no-positional').text(), 'one - two');
-});
+  ['@test dynamic arbitrary number of positional parameters']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: 'n'
+    });
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{#each attrs.n as |name|}}{{name}}{{/each}}'
+    });
 
-QUnit.test('dynamic arbitrary number of positional parameters', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: 'n'
-  });
-  owner.register('template:components/sample-component', compile('{{#each attrs.n as |name|}}{{name}}{{/each}}'));
-  owner.register('component:sample-component', SampleComponent);
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component user1 user2 id="direct"}}{{component "sample-component" user1 user2 id="helper"}}'),
-    context: {
+    this.render('{{sample-component user1 user2 id="direct"}}{{component "sample-component" user1 user2 id="helper"}}', {
       user1: 'Foo',
       user2: 4
-    }
-  }).create();
+    });
 
-  runAppend(view);
+    this.assertTextForSelector('#direct', 'Foo4');
+    this.assertTextForSelector('#helper', 'Foo4');
 
-  equal(view.$('#direct').text(), 'Foo4');
-  equal(view.$('#helper').text(), 'Foo4');
-  run(function() {
-    set(view.context, 'user1', 'Bar');
-    set(view.context, 'user2', '5');
-  });
+    run(() => {
+      this.component.set('user1', 'Bar');
+      this.component.set('user2', '5');
+    });
 
-  equal(view.$('#direct').text(), 'Bar5');
-  equal(view.$('#helper').text(), 'Bar5');
+    this.assertTextForSelector('#direct', 'Bar5');
+    this.assertTextForSelector('#helper', 'Bar5');
 
-  run(function() {
-    set(view.context, 'user2', '6');
-  });
+    run(() => {
+      this.component.set('user2', '6');
+    });
 
-  equal(view.$('#direct').text(), 'Bar6');
-  equal(view.$('#helper').text(), 'Bar6');
-});
+    this.assertTextForSelector('#direct', 'Bar6');
+    this.assertTextForSelector('#helper', 'Bar6');
+  }
 
-QUnit.test('moduleName is available on _renderNode when a layout is present', function() {
-  expect(1);
+  ['@test moduleName is available on _renderNode when a layout is present']() {
+    expect(1);
 
-  var layoutModuleName = 'my-app-name/templates/components/sample-component';
-  var sampleComponentLayout = compile('Sample Component - {{yield}}', {
-    moduleName: layoutModuleName
-  });
-  owner.register('template:components/sample-component', sampleComponentLayout);
-  owner.register('component:sample-component', Component.extend({
-    didInsertElement: function() {
-      equal(this._renderNode.lastResult.template.meta.moduleName, layoutModuleName);
-    }
-  }));
+    let layoutModuleName = 'my-app-name/templates/components/sample-component';
+    let sampleComponentLayout = compile('Sample Component - {{yield}}', {
+      moduleName: layoutModuleName
+    });
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{sample-component}}')
-  }).create();
+    this.owner.register('template:components/sample-component', sampleComponentLayout);
+    this.owner.register('component:sample-component', Component.extend({
+      didInsertElement: function() {
+        equal(this._renderNode.lastResult.template.meta.moduleName, layoutModuleName);
+      }
+    }));
 
-  runAppend(view);
-});
+    this.render('{{sample-component}}');
+  }
 
-QUnit.test('moduleName is available on _renderNode when no layout is present', function() {
-  expect(1);
+  ['@test moduleName is available on _renderNode when no layout is present']() {
+    expect(1);
 
-  var templateModuleName = 'my-app-name/templates/application';
-  owner.register('component:sample-component', Component.extend({
-    didInsertElement: function() {
-      equal(this._renderNode.lastResult.template.meta.moduleName, templateModuleName);
-    }
-  }));
+    let templateModuleName = 'my-app-name/templates/application';
+    this.registerComponent('sample-component', {
+      ComponentClass: Component.extend({
+        didInsertElement: function() {
+          equal(this._renderNode.lastResult.template.meta.moduleName, templateModuleName);
+        }
+      })
+    });
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{#sample-component}}Derp{{/sample-component}}', {
-      moduleName: templateModuleName
-    })
-  }).create();
+    this.render('{{#sample-component}}Derp{{/sample-component}}', {}, {
+      templateOptions: { moduleName: templateModuleName }
+    });
+  }
 
-  runAppend(view);
-});
+  ['@test {{component}} helper works with positional params']() {
+    let SampleComponent = Component.extend();
+    SampleComponent.reopenClass({
+      positionalParams: ['name', 'age']
+    });
 
-QUnit.test('{{component}} helper works with positional params', function() {
-  var SampleComponent = Component.extend();
-  SampleComponent.reopenClass({
-    positionalParams: ['name', 'age']
-  });
+    this.registerComponent('sample-component', {
+      ComponentClass: SampleComponent,
+      template: '{{attrs.name}}{{attrs.age}}'
+    });
 
-  owner.register('template:components/sample-component', compile('{{attrs.name}}{{attrs.age}}'));
-  owner.register('component:sample-component', SampleComponent);
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{component "sample-component" myName myAge}}'),
-    context: {
+    this.render('{{component "sample-component" myName myAge}}', {
       myName: 'Quint',
       myAge: 4
-    }
-  }).create();
+    });
 
-  runAppend(view);
-  equal(jQuery('#qunit-fixture').text(), 'Quint4');
-  run(function() {
-    set(view.context, 'myName', 'Edward');
-    set(view.context, 'myAge', '5');
-  });
+    this.assertText('Quint4');
 
-  equal(jQuery('#qunit-fixture').text(), 'Edward5');
-});
+    run(() => {
+      this.component.set('myName', 'Edward');
+      this.component.set('myAge', '5');
+    });
 
-QUnit.test('yield to inverse', function() {
-  owner.register('template:components/my-if', compile('{{#if predicate}}Yes:{{yield someValue}}{{else}}No:{{yield to="inverse"}}{{/if}}'));
+    this.assertText('Edward5');
+  }
 
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{#my-if predicate=activated someValue=42 as |result|}}Hello{{result}}{{else}}Goodbye{{/my-if}}'),
-    context: {
+  ['@test yield to inverse']() {
+    this.registerComponent('my-if', {
+      template: '{{#if predicate}}Yes:{{yield someValue}}{{else}}No:{{yield to="inverse"}}{{/if}}'
+    });
+
+    this.render('{{#my-if predicate=activated someValue=42 as |result|}}Hello{{result}}{{else}}Goodbye{{/my-if}}', {
       activated: true
-    }
-  }).create();
+    });
 
-  runAppend(view);
-  equal(jQuery('#qunit-fixture').text(), 'Yes:Hello42');
-  run(function() {
-    set(view.context, 'activated', false);
-  });
+    this.assertText('Yes:Hello42');
 
-  equal(jQuery('#qunit-fixture').text(), 'No:Goodbye');
+    run(() => {
+      this.component.set('activated', false);
+    });
+
+    this.assertText('No:Goodbye');
+  }
+
+  ['@test parameterized hasBlock inverse']() {
+    this.registerComponent('check-inverse', {
+      template: '{{#if (hasBlock "inverse")}}Yes{{else}}No{{/if}}'
+    });
+
+    this.render('{{#check-inverse id="expect-no"}}{{/check-inverse}}  {{#check-inverse id="expect-yes"}}{{else}}{{/check-inverse}}');
+
+    this.assertTextForSelector('#expect-no', 'No');
+    this.assertTextForSelector('#expect-yes', 'Yes');
+  }
+
+  ['@test parameterized hasBlock default']() {
+    this.registerComponent('check-block', {
+      template: '{{#if (hasBlock)}}Yes{{else}}No{{/if}}'
+    });
+
+    this.render('{{check-block id="expect-no"}}  {{#check-block id="expect-yes"}}{{/check-block}}');
+
+    this.assertTextForSelector('#expect-no', 'No');
+    this.assertTextForSelector('#expect-yes', 'Yes');
+  }
+
+  ['@test non-expression hasBlock ']() {
+    this.registerComponent('check-block', {
+      template: '{{#if hasBlock}}Yes{{else}}No{{/if}}'
+    });
+
+    this.render('{{check-block id="expect-no"}}  {{#check-block id="expect-yes"}}{{/check-block}}');
+
+    this.assertTextForSelector('#expect-no', 'No');
+    this.assertTextForSelector('#expect-yes', 'Yes');
+  }
+
+  ['@test parameterized hasBlockParams']() {
+    this.registerComponent('check-params', {
+      template: '{{#if (hasBlockParams)}}Yes{{else}}No{{/if}}'
+    });
+
+    this.render('{{#check-params id="expect-no"}}{{/check-params}}  {{#check-params id="expect-yes" as |foo|}}{{/check-params}}');
+
+    this.assertTextForSelector('#expect-no', 'No');
+    this.assertTextForSelector('#expect-yes', 'Yes');
+  }
+
+  ['@test non-expression hasBlockParams']() {
+    this.registerComponent('check-params', {
+      template: '{{#if hasBlockParams}}Yes{{else}}No{{/if}}'
+    });
+
+    this.render('{{#check-params id="expect-no"}}{{/check-params}}  {{#check-params id="expect-yes" as |foo|}}{{/check-params}}');
+
+    this.assertTextForSelector('#expect-no', 'No');
+    this.assertTextForSelector('#expect-yes', 'Yes');
+  }
+
+  ['@test components in template of a yielding component should have the proper parentView']() {
+    let outer, innerTemplate, innerLayout;
+
+    this.registerComponent('x-outer', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          outer = this;
+        }
+      }),
+      template: '{{x-inner-in-layout}}{{yield}}'
+    });
+
+    this.registerComponent('x-inner-in-template', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          innerTemplate = this;
+        }
+      })
+    });
+
+    this.registerComponent('x-inner-in-layout', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          innerLayout = this;
+        }
+      })
+    });
+
+    this.render('{{#x-outer}}{{x-inner-in-template}}{{/x-outer}}');
+
+    equal(innerTemplate.parentView, outer, 'receives the wrapping component as its parentView in template blocks');
+    equal(innerLayout.parentView, outer, 'receives the wrapping component as its parentView in layout');
+    equal(outer.parentView, this.component, 'x-outer receives the ambient scope as its parentView');
+  }
+
+  ['@test newly-added sub-components get correct parentView']() {
+    let outer, inner;
+
+    this.registerComponent('x-outer', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          outer = this;
+        }
+      })
+    });
+
+    this.registerComponent('x-inner', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          inner = this;
+        }
+      })
+    });
+
+    this.render('{{#x-outer}}{{#if view.showInner}}{{x-inner}}{{/if}}{{/x-outer}}', {
+      showInner: false
+    });
+
+    run(() => { this.component.set('showInner', true); });
+
+    equal(inner.parentView, outer, 'receives the wrapping component as its parentView in template blocks');
+    equal(outer.parentView, this.component, 'x-outer receives the ambient scope as its parentView');
+  }
+
+  ['@test components should receive the viewRegistry from the parent view']() {
+    let outer, innerTemplate, innerLayout;
+
+    let viewRegistry = {};
+
+    this.registerComponent('x-outer', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          outer = this;
+        }
+      }),
+      template: '{{x-inner-in-layout}}{{yield}}'
+    });
+
+    this.registerComponent('x-inner-in-template', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          innerTemplate = this;
+        }
+      })
+    });
+
+    this.registerComponent('x-inner-in-layout', {
+      ComponentClass: Component.extend({
+        init() {
+          this._super(...arguments);
+          innerLayout = this;
+        }
+      })
+    });
+
+    this.render('{{#x-outer}}{{x-inner-in-template}}{{/x-outer}}', {
+      _viewRegistry: viewRegistry
+    });
+
+    equal(innerTemplate._viewRegistry, viewRegistry);
+    equal(innerLayout._viewRegistry, viewRegistry);
+    equal(outer._viewRegistry, viewRegistry);
+  }
+
+  ['@test comopnent should rerender when a property is changed during children\'s rendering']() {
+    expectDeprecation(/modified value twice in a single render/);
+
+    let outer, middle;
+
+    this.registerComponent('x-outer', {
+      ComponentClass: Component.extend({
+        value: 1,
+        init() {
+          this._super(...arguments);
+          outer = this;
+        }
+      }),
+      template: '{{#x-middle}}{{x-inner value=value}}{{/x-middle}}'
+    });
+
+    this.registerComponent('x-middle', {
+      ComponentClass: Component.extend({
+        value: null,
+        init() {
+          this._super(...arguments);
+          middle = this;
+        }
+      }),
+      template: '<div id="middle-value">{{value}}</div>{{yield}}'
+    });
+
+    this.registerComponent('x-inner', {
+      ComponentClass: Component.extend({
+        value: null,
+        pushDataUp: Ember.observer('value', function() {
+          middle.set('value', this.get('value'));
+        })
+      }),
+      template: '<div id="inner-value">{{value}}</div>'
+    });
+
+
+    this.render('{{x-outer}}');
+
+    this.assertTextForSelector('#inner-value', '1', 'initial render of inner');
+    this.assertTextForSelector('#middle-value', '', 'initial render of middle (observers do not run during init)');
+
+    run(() => outer.set('value', 2));
+
+    this.assertTextForSelector('#inner-value', '2', 'second render of inner');
+    this.assertTextForSelector('#middle-value', '2', 'second render of middle');
+
+    run(() => outer.set('value', 3));
+
+    this.assertTextForSelector('#inner-value', '3', 'third render of inner');
+    this.assertTextForSelector('#middle-value', '3', 'third render of middle');
+  }
+
+  ['@test non-block with each rendering child components']() {
+    expect(2);
+
+    this.registerComponent('non-block', {
+      template: 'In layout. {{#each attrs.items as |item|}}[{{child-non-block item=item}}]{{/each}}'
+    });
+    this.registerComponent('child-non-block', {
+      template: 'Child: {{attrs.item}}.'
+    });
+
+    let items = emberA(['Tom', 'Dick', 'Harry']);
+
+    this.render('{{non-block items=view.items}}', {
+      items: items
+    });
+
+    this.assertText('In layout. [Child: Tom.][Child: Dick.][Child: Harry.]');
+
+    run(() => {
+      items.pushObject('James');
+    });
+
+    this.assertText('In layout. [Child: Tom.][Child: Dick.][Child: Harry.][Child: James.]');
+  }
+
+  ['@test specifying classNames results in correct class'](assert) {
+    expect(3);
+
+    let clickyThing;
+    this.registerComponent('some-clicky-thing', {
+      ComponentClass: Component.extend({
+        tagName: 'button',
+        classNames: ['foo', 'bar'],
+        init() {
+          this._super(...arguments);
+          clickyThing = this;
+        }
+      })
+    });
+
+    this.render('{{#some-clicky-thing classNames="baz"}}Click Me{{/some-clicky-thing}}');
+
+    let button = this.$('button');
+    assert.ok(button.is('.foo.bar.baz.ember-view'), 'the element has the correct classes: ' + button.attr('class'));
+
+    let expectedClassNames = ['ember-view', 'foo', 'bar', 'baz'];
+    assert.deepEqual(clickyThing.get('classNames'),  expectedClassNames, 'classNames are properly combined');
+
+    let buttonClassNames = button.attr('class');
+    assert.deepEqual(buttonClassNames.split(' '), expectedClassNames, 'all classes are set 1:1 in DOM');
+  }
+
+  ['@test specifying custom concatenatedProperties avoids clobbering'](assert) {
+    expect(1);
+
+    let clickyThing;
+    this.registerComponent('some-clicky-thing', {
+      ComponentClass: Component.extend({
+        concatenatedProperties: ['blahzz'],
+        blahzz: ['blark', 'pory'],
+        init() {
+          this._super(...arguments);
+          clickyThing = this;
+        }
+      })
+    });
+
+    this.render('{{#some-clicky-thing blahzz="baz"}}Click Me{{/some-clicky-thing}}');
+
+    assert.deepEqual(clickyThing.get('blahzz'),  ['blark', 'pory', 'baz'], 'property is properly combined');
+  }
+
 });
 
-QUnit.test('parameterized hasBlock inverse', function() {
-  owner.register('template:components/check-inverse', compile('{{#if (hasBlock "inverse")}}Yes{{else}}No{{/if}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{#check-inverse id="expect-no"}}{{/check-inverse}}  {{#check-inverse id="expect-yes"}}{{else}}{{/check-inverse}}')
-  }).create();
-
-  runAppend(view);
-  equal(jQuery('#qunit-fixture #expect-no').text(), 'No');
-  equal(jQuery('#qunit-fixture #expect-yes').text(), 'Yes');
-});
-
-QUnit.test('parameterized hasBlock default', function() {
-  owner.register('template:components/check-block', compile('{{#if (hasBlock)}}Yes{{else}}No{{/if}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{check-block id="expect-no"}}  {{#check-block id="expect-yes"}}{{/check-block}}')
-  }).create();
-
-  runAppend(view);
-  equal(jQuery('#qunit-fixture #expect-no').text(), 'No');
-  equal(jQuery('#qunit-fixture #expect-yes').text(), 'Yes');
-});
-
-QUnit.test('non-expression hasBlock ', function() {
-  owner.register('template:components/check-block', compile('{{#if hasBlock}}Yes{{else}}No{{/if}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{check-block id="expect-no"}}  {{#check-block id="expect-yes"}}{{/check-block}}')
-  }).create();
-
-  runAppend(view);
-  equal(jQuery('#qunit-fixture #expect-no').text(), 'No');
-  equal(jQuery('#qunit-fixture #expect-yes').text(), 'Yes');
-});
-
-QUnit.test('parameterized hasBlockParams', function() {
-  owner.register('template:components/check-params', compile('{{#if (hasBlockParams)}}Yes{{else}}No{{/if}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{#check-params id="expect-no"}}{{/check-params}}  {{#check-params id="expect-yes" as |foo|}}{{/check-params}}')
-  }).create();
-
-  runAppend(view);
-  equal(jQuery('#qunit-fixture #expect-no').text(), 'No');
-  equal(jQuery('#qunit-fixture #expect-yes').text(), 'Yes');
-});
-
-QUnit.test('non-expression hasBlockParams', function() {
-  owner.register('template:components/check-params', compile('{{#if hasBlockParams}}Yes{{else}}No{{/if}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    layout: compile('{{#check-params id="expect-no"}}{{/check-params}}  {{#check-params id="expect-yes" as |foo|}}{{/check-params}}')
-  }).create();
-
-  runAppend(view);
-  equal(jQuery('#qunit-fixture #expect-no').text(), 'No');
-  equal(jQuery('#qunit-fixture #expect-yes').text(), 'Yes');
-});
-
-QUnit.test('components in template of a yielding component should have the proper parentView', function() {
-  var outer, innerTemplate, innerLayout;
-
-  owner.register('component:x-outer', Component.extend({
-    init() {
-      this._super(...arguments);
-      outer = this;
-    }
-  }));
-
-  owner.register('component:x-inner-in-template', Component.extend({
-    init() {
-      this._super(...arguments);
-      innerTemplate = this;
-    }
-  }));
-
-  owner.register('component:x-inner-in-layout', Component.extend({
-    init() {
-      this._super(...arguments);
-      innerLayout = this;
-    }
-  }));
-
-  owner.register('template:components/x-outer', compile('{{x-inner-in-layout}}{{yield}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#x-outer}}{{x-inner-in-template}}{{/x-outer}}')
-  }).create();
-
-  runAppend(view);
-
-  equal(innerTemplate.parentView, outer, 'receives the wrapping component as its parentView in template blocks');
-  equal(innerLayout.parentView, outer, 'receives the wrapping component as its parentView in layout');
-  equal(outer.parentView, view, 'x-outer receives the ambient scope as its parentView');
-});
-
-QUnit.test('newly-added sub-components get correct parentView', function() {
-  var outer, inner;
-
-  owner.register('component:x-outer', Component.extend({
-    init() {
-      this._super(...arguments);
-      outer = this;
-    }
-  }));
-
-  owner.register('component:x-inner', Component.extend({
-    init() {
-      this._super(...arguments);
-      inner = this;
-    }
-  }));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#x-outer}}{{#if view.showInner}}{{x-inner}}{{/if}}{{/x-outer}}'),
-    showInner: false
-  }).create();
-
-  runAppend(view);
-
-  run(() => { view.set('showInner', true); });
-
-  equal(inner.parentView, outer, 'receives the wrapping component as its parentView in template blocks');
-  equal(outer.parentView, view, 'x-outer receives the ambient scope as its parentView');
-});
-
-QUnit.test('components should receive the viewRegistry from the parent view', function() {
-  var outer, innerTemplate, innerLayout;
-
-  var viewRegistry = {};
-
-  owner.register('component:x-outer', Component.extend({
-    init() {
-      this._super(...arguments);
-      outer = this;
-    }
-  }));
-
-  owner.register('component:x-inner-in-template', Component.extend({
-    init() {
-      this._super(...arguments);
-      innerTemplate = this;
-    }
-  }));
-
-  owner.register('component:x-inner-in-layout', Component.extend({
-    init() {
-      this._super(...arguments);
-      innerLayout = this;
-    }
-  }));
-
-  owner.register('template:components/x-outer', compile('{{x-inner-in-layout}}{{yield}}'));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    _viewRegistry: viewRegistry,
-    template: compile('{{#x-outer}}{{x-inner-in-template}}{{/x-outer}}')
-  }).create();
-
-  runAppend(view);
-
-  equal(innerTemplate._viewRegistry, viewRegistry);
-  equal(innerLayout._viewRegistry, viewRegistry);
-  equal(outer._viewRegistry, viewRegistry);
-});
-
-QUnit.test('comopnent should rerender when a property is changed during children\'s rendering', function() {
-  expectDeprecation(/modified value twice in a single render/);
-
-  var outer, middle;
-
-  owner.register('component:x-outer', Component.extend({
-    value: 1,
-    grabReference: Ember.on('init', function() {
-      outer = this;
-    })
-  }));
-
-  owner.register('component:x-middle', Component.extend({
-    value: null,
-    grabReference: Ember.on('init', function() {
-      middle = this;
-    })
-  }));
-
-  owner.register('component:x-inner', Component.extend({
-    value: null,
-    pushDataUp: Ember.observer('value', function() {
-      middle.set('value', this.get('value'));
-    })
-  }));
-
-  owner.register('template:components/x-outer', compile('{{#x-middle}}{{x-inner value=value}}{{/x-middle}}'));
-  owner.register('template:components/x-middle', compile('<div id="middle-value">{{value}}</div>{{yield}}'));
-  owner.register('template:components/x-inner', compile('<div id="inner-value">{{value}}</div>'));
-
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{x-outer}}')
-  }).create();
-
-  runAppend(view);
-
-  equal(view.$('#inner-value').text(), '1', 'initial render of inner');
-  equal(view.$('#middle-value').text(), '', 'initial render of middle (observers do not run during init)');
-
-  run(() => outer.set('value', 2));
-
-  equal(view.$('#inner-value').text(), '2', 'second render of inner');
-  equal(view.$('#middle-value').text(), '2', 'second render of middle');
-
-  run(() => outer.set('value', 3));
-
-  equal(view.$('#inner-value').text(), '3', 'third render of inner');
-  equal(view.$('#middle-value').text(), '3', 'third render of middle');
-});
-
-QUnit.test('non-block with each rendering child components', function() {
-  expect(2);
-
-  owner.register('template:components/non-block', compile('In layout. {{#each attrs.items as |item|}}[{{child-non-block item=item}}]{{/each}}'));
-  owner.register('template:components/child-non-block', compile('Child: {{attrs.item}}.'));
-
-  var items = emberA(['Tom', 'Dick', 'Harry']);
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{non-block items=view.items}}'),
-    items: items
-  }).create();
-
-  runAppend(view);
-
-  equal(jQuery('#qunit-fixture').text(), 'In layout. [Child: Tom.][Child: Dick.][Child: Harry.]');
-
-  run(function() {
-    items.pushObject('James');
-  });
-
-  equal(jQuery('#qunit-fixture').text(), 'In layout. [Child: Tom.][Child: Dick.][Child: Harry.][Child: James.]');
-});
-
-QUnit.test('specifying classNames results in correct class', function(assert) {
-  expect(3);
-
-  let clickyThing;
-  owner.register('component:some-clicky-thing', Component.extend({
-    tagName: 'button',
-    classNames: ['foo', 'bar'],
-    init() {
-      this._super(...arguments);
-      clickyThing = this;
-    }
-  }));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#some-clicky-thing classNames="baz"}}Click Me{{/some-clicky-thing}}')
-  }).create();
-
-  runAppend(view);
-
-  let button = view.$('button');
-  ok(button.is('.foo.bar.baz.ember-view'), 'the element has the correct classes: ' + button.attr('class'));
-
-  let expectedClassNames = ['ember-view', 'foo', 'bar', 'baz'];
-  assert.deepEqual(clickyThing.get('classNames'),  expectedClassNames, 'classNames are properly combined');
-
-  let buttonClassNames = button.attr('class');
-  assert.deepEqual(buttonClassNames.split(' '), expectedClassNames, 'all classes are set 1:1 in DOM');
-});
-
-QUnit.test('specifying custom concatenatedProperties avoids clobbering', function(assert) {
-  expect(1);
-
-  let clickyThing;
-  owner.register('component:some-clicky-thing', Component.extend({
-    concatenatedProperties: ['blahzz'],
-    blahzz: ['blark', 'pory'],
-    init() {
-      this._super(...arguments);
-      clickyThing = this;
-    }
-  }));
-
-  view = EmberView.extend({
-    [OWNER]: owner,
-    template: compile('{{#some-clicky-thing blahzz="baz"}}Click Me{{/some-clicky-thing}}')
-  }).create();
-
-  runAppend(view);
-
-  assert.deepEqual(clickyThing.get('blahzz'),  ['blark', 'pory', 'baz'], 'property is properly combined');
-});
