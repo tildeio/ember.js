@@ -1,5 +1,5 @@
 import { Environment as GlimmerEnvironment } from 'glimmer-runtime';
-import { isConst } from 'glimmer-reference';
+import { isConst as glimmerIsConst } from 'glimmer-reference';
 import Dict from 'ember-metal/empty_object';
 import { CurlyComponentSyntax, CurlyComponentDefinition } from './components/curly-component';
 import { DynamicComponentSyntax } from './components/dynamic-component';
@@ -25,6 +25,8 @@ import { default as loc } from './helpers/loc';
 import { default as log } from './helpers/log';
 import { default as unbound } from './helpers/unbound';
 import { OWNER } from 'container/owner';
+
+import { isProxy } from 'ember-runtime/system/object_proxy';
 
 const builtInHelpers = {
   concat,
@@ -128,4 +130,11 @@ export default class Environment extends GlimmerEnvironment {
     let keyPath = args.named.get('key').value();
     return createIterable(ref, keyPath);
   }
+}
+
+function isConst(ref) {
+  if (!glimmerIsConst(ref)) { return false; }
+  let value = ref.value();
+  if (value && 'isTruthy' in value) { return false; }
+  return glimmerIsConst(value) && !isProxy(value);
 }
