@@ -48,9 +48,11 @@ Renderer.prototype.renderTopLevelView =
   function Renderer_renderTopLevelView(view, renderNode) {
     // Check to see if insertion has been canceled.
     if (view._willInsert) {
+      console.time('Initial render');
       view._willInsert = false;
       this.prerenderTopLevelView(view, renderNode);
       this.dispatchLifecycleHooks(view.env);
+      console.timeEnd('Initial render');
     }
   };
 

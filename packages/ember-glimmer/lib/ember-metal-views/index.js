@@ -15,12 +15,15 @@ class DynamicScope {
 
 class Renderer {
   constructor({ dom, env, destinedForDOM = false }) {
+    this._root = null;
     this._dom = dom;
     this._env = env;
     this._destinedForDOM = destinedForDOM;
   }
 
   appendOutletView(view, target) {
+    this._root = view;
+
     let env = this._env;
     let self = new RootReference(view);
     let dynamicScope = new DynamicScope({
@@ -30,9 +33,11 @@ class Renderer {
       isTopLevel: true
     });
 
+    console.time('Initial render');
     env.begin();
     let result = view.template.asEntryPoint().render(self, env, { appendTo: target, dynamicScope });
     env.commit();
+    console.timeEnd('Initial render');
 
     return result;
   }
@@ -42,9 +47,11 @@ class Renderer {
     let self = new RootReference(view);
     let dynamicScope = new DynamicScope({ view });
 
+    console.time('Initial render');
     env.begin();
     let result = view.template.asEntryPoint().render(self, env, { appendTo: target, dynamicScope });
     env.commit();
+    console.timeEnd('Initial render');
 
     // FIXME: Store this somewhere else
     view['_renderResult'] = result;
@@ -54,7 +61,7 @@ class Renderer {
   }
 
   rerender(view) {
-    view['_renderResult'].rerender();
+    (view['_renderResult'] || this._root['_renderResult']).rerender();
   }
 
   remove(view) {

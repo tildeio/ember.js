@@ -239,10 +239,18 @@ function endPropertyChanges() {
 */
 function changeProperties(callback, binding) {
   beginPropertyChanges();
-  try {
+  tryFinally(() => {
     callback.call(binding);
-  } finally {
+  }, () => {
     endPropertyChanges.call(binding);
+  });
+}
+
+function tryFinally(trying, finallying) {
+  try {
+    trying();
+  } finally {
+    finallying();
   }
 }
 
